@@ -1,0 +1,65 @@
+.program gyroscope
+; https://invensense.tdk.com/wp-content/uploads/2020/04/ds-000347_icm-42688-p-datasheet.pdf
+; page 53
+
+.in 1 left auto 16               ; miso is input pin
+.out 1 auto 8                    ; mosi is out pin
+.side_set 1                      ; sck is sideset pin
+.set 1                           ; cs is set pin
+                                 ; int is jmp pin
+
+    wait 0 jmppin     side 1     ; wait for interrupt
+
+    set pins 0        side 1     ; pull cs low for a total of 40 ns
+    set x 7           side 1 [2] ; get ready to write 8 bits
+
+writeloop:                       ; loop runs with a period of 40 ns
+    out pins 1        side 0 [1] ; pull clock low and write the register to read
+    jmp x-- writeloop side 1 [1] ; pull clock high and let peripheral read data
+
+    mov x y           side 1     ; get ready to read 48 bits
+
+readloop:                        ; loop runs with a period of 40 ns
+    nop               side 0 [1] ; pull clock low and wait for data to change
+    in pins 1         side 1     ; read in data and pull clock high for first 10 ns
+    jmp x-- readloop  side 1     ; jump back to start and pull clock high for second 10 ns
+
+    set pins 1        side 1     ; pull cs high
+
+% c-sdk {
+
+#include "hardware/clocks.h"
+
+static inline void gyroscope_program_init(PIO pio, uint sm, uint offset, uint cs, uint sck, uint miso, uint mosi, uint interrupt) {
+    float clkdiv = clock_get_hz(clk_sys) * 10.0e-9f;
+
+    pio_sm_config config = gyroscope_program_get_default_config(offset);
+    sm_config_set_set_pin_base(&config, cs);
+    sm_config_set_sideset_pin_base(&config, sck);
+    sm_config_set_in_pin_base(&config, miso);
+    sm_config_set_out_pin_base(&config, mosi);
+    sm_config_set_jmp_pin(&config, interrupt);
+    sm_config_set_clkdiv(&config, clkdiv);
+
+    uint32_t highAndOutputPins = (1u << cs) | (1u << sck) | (1u << mosi);
+    uint32_t allPins = highAndOutputPins | (1u << miso) | (1u << interrupt);
+    pio_sm_set_pins_with_mask(pio, sm, highAndOutputPins, highAndOutputPins);
+    pio_sm_set_pindirs_with_mask(pio, sm, highAndOutputPins, allPins);
+
+    pio_gpio_init(pio, cs);
+    pio_gpio_init(pio, sck);
+    pio_gpio_init(pio, miso);
+    pio_gpio_init(pio, mosi);
+    pio_gpio_init(pio, interrupt);
+
+    hw_set_bits(&pio->input_sync_bypass, 1u << miso | 1u << interrupt);
+
+    pio_sm_put(pio, sm, 47u);
+    pio_sm_exec(pio, sm, pio_encode_pull(false, true));
+    pio_sm_exec(pio, sm, pio_encode_mov(pio_y, pio_osr));
+
+    pio_sm_init(pio, sm, offset, &config);
+    pio_sm_set_enabled(pio, sm, true);
+}
+
+%}

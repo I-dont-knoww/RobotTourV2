@@ -1,0 +1,21 @@
+.program compass
+; https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8590234963875966976
+; page 15
+
+.in 1 left auto 16          ; sda is input pin
+.out 1 auto 9               ; sda is out pin
+.side_set 1 pindirs         ; scl is sideset pin
+.set 1                      ; sda is set pin
+
+    
+
+% c-sdk {
+
+#include "hardware/clocks.h"
+#include "hardware/gpio.h"
+
+static inline void compass_program_init(PIO pio, uint sm, uint offset, uint sda, uint scl) {
+
+}
+
+%}

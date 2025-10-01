@@ -1,0 +1,40 @@
+#include "kinematics/ForwardKinematics.hpp"
+
+#include "Constants.hpp"
+
+#include "filters/MAFilter.hpp"
+
+#include "state/Radians.hpp"
+#include "state/Vector.hpp"
+
+#include <optional>
+
+ForwardKinematics::ForwardKinematics(Vec2 const& wheelAngles) : m_prevWheelAngles{ wheelAngles } {}
+
+void ForwardKinematics::update(Vec2 const& wheelAngles, std::optional<float> gyroscopeHeading,
+                               float dt) {
+    Radians const dWheelAngleLeft{ wheelAngles.x - m_prevWheelAngles.x };
+    Radians const dWheelAngleRight{ wheelAngles.y - m_prevWheelAngles.y };
+
+    float const dLeft = Kinematics::WHEEL_RADIUS * dWheelAngleLeft.toFloat();
+    float const dRight = Kinematics::WHEEL_RADIUS * dWheelAngleRight.toFloat();
+    float const d = (dLeft + dRight) / 2.0f;
+ 
+    float const deltaTheta = (dRight - dLeft) / Kinematics::AXLE_LENGTH;
+    float const theta = gyroscopeHeading.value_or(m_prevTheta + deltaTheta);
+
+    m_state.position += Vec2::fromPolar(d, m_prevTheta + deltaTheta / 2.0f);
+    m_state.angle = theta;
+
+    Vec2 const velocity{ (m_state.position - m_prevPosition) / dt };
+    m_state.velocity.x = m_velocityXFilter.update(velocity.x, dt);
+    m_state.velocity.y = m_velocityYFilter.update(velocity.y, dt);
+    m_state.angularVelocity = m_angularVelocityFilter.update(deltaTheta / dt, dt);
+
+    m_state.wheelSpeeds.x = m_leftWheelSpeedFilter.update(dWheelAngleLeft / dt, dt);
+    m_state.wheelSpeeds.y = m_rightWheelSpeedFilter.update(dWheelAngleRight / dt, dt);
+
+    m_prevPosition = m_state.position;
+    m_prevWheelAngles = wheelAngles;
+    m_prevTheta = theta;
+}

@@ -1,0 +1,55 @@
+.program encoders
+; https://uploadcdn.oneyac.com/attachments/files/brand_pdf/magntek/F3/CA/MT6701QT-STD.pdf
+; page 23
+
+.in 1 left auto 24           ; miso is input pin
+.side_set 1                  ; sck is sideset pin
+.set 2                       ; csLeft and csRight are set pins
+
+    set x 23      side 1 [1] ; prepare to take in 24 bits
+    set pins 0b10 side 1 [2] ; reset csRight then pull csLeft low and wait 60 ns
+    nop           side 0 [1] ; pull clock low for 40 ns
+
+loop1:                       ; loop runs at a period of 80 ns
+    nop           side 1 [1] ; pull clock high to transfer data for 40 ns
+    in pins 1     side 0     ; take in data and pull clock low for the first 20 ns
+    jmp x-- loop1 side 0     ; pull clock low for the second 20 ns and then loop back
+
+    set x 23      side 1 [1] ; prepare to take in 24 bits
+    set pins 0b01 side 1 [2] ; reset csLeft then pull csRight low and wait 60 ns
+    nop           side 0 [1] ; pull clock low for 40 ns
+
+loop2:                       ; loop runs at a period of 80 ns
+    nop           side 1 [1] ; pull clock high to transfer data for 40 ns
+    in pins 1     side 0     ; take in data and pull clock low for the first 20 ns
+    jmp x-- loop2 side 0     ; pull clock low for the second 20 ns and then loop back
+
+% c-sdk {
+
+#include "hardware/clocks.h"
+
+static inline void encoders_program_init(PIO pio, uint sm, uint offset, uint csLeft, uint csRight, uint sck, uint miso) {
+    float clkdiv = clock_get_hz(clk_sys) * 20e-9f; // clkdiv for 20 ns period
+
+    pio_sm_config config = encoders_program_get_default_config(offset);
+    sm_config_set_in_pin_base(&config, miso);
+    sm_config_set_sideset_pin_base(&config, sck);
+    sm_config_set_set_pin_base(&config, csLeft);
+    sm_config_set_clkdiv(&config, clkdiv);
+
+    uint32_t highAndOutputPins = (1u << csLeft) | (1u << csRight) | (1u << sck);
+    pio_sm_set_pins_with_mask(pio, sm, highAndOutputPins, highAndOutputPins);
+    pio_sm_set_pindirs_with_mask(pio, sm, highAndOutputPins, highAndOutputPins | (1u << miso));
+
+    pio_gpio_init(pio, csLeft);
+    pio_gpio_init(pio, csRight);
+    pio_gpio_init(pio, sck);
+    pio_gpio_init(pio, miso);
+
+    hw_set_bits(&pio->input_sync_bypass, 1u << miso);
+
+    pio_sm_init(pio, sm, offset, &config);
+    pio_sm_set_enabled(pio, sm, true);
+}
+
+%}
