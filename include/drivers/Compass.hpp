@@ -75,30 +75,18 @@ public:
 
     void switchToPIO(PIO pio, uint sdaPin, uint sclPin) const {
         endSetup();
-        setupPIORead(pio, sdaPin, sclPin);
+        setupContinuousRead(pio, sdaPin, sclPin);
     }
 
     float getData() {
-        uint8_t const startRegister = static_cast<uint8_t>(Register::DATA_OUT_X_LSB);
-        uint8_t const endRegister = static_cast<uint8_t>(Register::DATA_OUT_Z_MSB);
-
-        uint8_t registerValues[6]{};
-
-        for (uint8_t reg = startRegister; reg <= endRegister; ++reg)
-            registerValues[reg - startRegister] = readRegister(static_cast<Register>(reg));
-
-        uint16_t x = registerValues[1] << 8u | registerValues[0];
-        uint16_t y = registerValues[3] << 8u | registerValues[2];
-        uint16_t z = registerValues[5] << 8u | registerValues[4];
+        uint16_t x = static_cast<uint16_t>(m_rawData[0]);
+        uint16_t y = static_cast<uint16_t>(m_rawData[1]);
+        uint16_t z = static_cast<uint16_t>(m_rawData[2]);
 
         Vec3 const rawData{ static_cast<float>(std::bit_cast<int16_t>(x)),
                             static_cast<float>(std::bit_cast<int16_t>(y)),
                             static_cast<float>(std::bit_cast<int16_t>(z)) };
         Vec3 const calibratedData = (rawData - m_calibration.offset) * m_calibration.scale;
-
-        std::printf(">magxy:%.5f:%.5f|xy\n", calibratedData.x, calibratedData.y);
-        std::printf(">magyz:%.5f:%.5f|xy\n", calibratedData.y, calibratedData.z);
-        std::printf(">magxz:%.5f:%.5f|xy\n", calibratedData.x, calibratedData.z);
 
         float const compensatedX = m_tiltCompA * calibratedData.x + m_tiltCompB * calibratedData.y +
                                    m_tiltCompC * calibratedData.z;
@@ -132,7 +120,7 @@ private:
     void setupRegisters() const;
 
     void endSetup() const;
-    void setupPIORead(PIO pio, uint sdaPin, uint sclPin) const;
+    void setupContinuousRead(PIO pio, uint sdaPin, uint sclPin) const;
 
     uint8_t readRegister(Register reg) const;
     void writeRegister(Register reg, uint8_t value) const;
@@ -140,6 +128,7 @@ private:
     Calibration m_calibration{};
 
     uint32_t volatile m_rawData[3]{ 0u, 0u, 0u };
+    uint32_t const m_rawDataPtr{};
 
     float const m_tiltCompA{};
     float const m_tiltCompB{};

@@ -1,13 +1,56 @@
 .program compass
+; https://github.com/raspberrypi/pico-examples/blob/master/pio/i2c/i2c.pio
 ; https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8590234963875966976
 ; page 15
 
-.in 1 left auto 16          ; sda is input pin
-.out 1 auto 9               ; sda is out pin
-.side_set 1 pindirs         ; scl is sideset pin
-.set 1                      ; sda is set pin
+.in 1 left auto 16                    ; sda is input pin
+.out 1 left auto 9                    ; sda is out pin
+.side_set 1 pindirs                   ; scl is sideset pin
+.set 1                                ; sda is set pin
+                                      ; scl is jmp pin
 
+slaveaddressstart:
+    set pindirs 0            side 1 [1] ; send first part of start condition
+    set x 8                  side 0 [1] ; get ready to send 9 bits and the rest of start condition
+
+slaveaddressloop:
+    out pindirs 1            side 0 [1] ; send out a bit of slave address
+    nop                      side 1     ; scl rising edge
+    wait 1 jmppin            side 1     ; wait for clock to be stretched
+    jmp x-- slaveaddressloop side 0 [1] ; scl falling edge
+
+    mov y ~y                 side 0     ; every other time decide to either
+    jmp !y regaddressstart   side 0     ; send register address or read data
     
+readdatastart:
+    set x 7                  side 0 [1] ; get ready to read 8 bits
+
+readdataloop:
+    nop                      side 1     ; scl rising edge
+    wait 1 jmppin            side 1     ; wait for clock to be stretched
+    in pins 1                side 1     ; read in 1 bit of data
+    jmp x-- readdataloop     side 0 [3] ; scl falling edge
+
+    nop                      side 1     ; scl rising edge
+    wait 1 jmppin            side 1     ; wait for clock to be stretched
+    nop                      side 0 [3] ; scl falling edge
+
+    set pindirs 0            side 0     ; get ready for stop condition
+    nop                      side 1 [1] ; stop condition first part
+    set pindirs 1            side 1     ; stop condition second part
+
+    jmp slaveaddressstart    side 1
+
+regaddressstart:
+    set x 8                  side 0 [1] ; get ready to send 9 bits and the rest of start condition
+
+regaddressloop:
+    out pindirs 1            side 0 [1] ; send out a bit of slave address
+    nop                      side 1     ; scl rising edge
+    wait 1 jmppin            side 1     ; wait for clock to be stretched
+    jmp x-- regaddressloop   side 0 [1] ; scl falling edge
+
+    nop                      side 1
 
 % c-sdk {
 
@@ -15,7 +58,31 @@
 #include "hardware/gpio.h"
 
 static inline void compass_program_init(PIO pio, uint sm, uint offset, uint sda, uint scl) {
+    float clkdiv = clock_get_hz(clk_sys) * 325.0e-9f;
 
+    pio_sm_config config = compass_program_get_default_config(offset);
+    sm_config_set_in_pin_base(&config, sda);
+    sm_config_set_out_pin_base(&config, sda);
+    sm_config_set_set_pin_base(&config, sda);
+    sm_config_set_sideset_pin_base(&config, scl);
+    sm_config_set_jmp_pin(&config, scl);
+    sm_config_set_clkdiv(&config, clkdiv);
+
+    uint32_t pins = (1u << sda) | (1u << scl);
+    gpio_pull_up(sda);
+    gpio_pull_up(scl);
+    pio_sm_set_pins_with_mask(pio, sm, pins, pins);
+    pio_sm_set_pindirs_with_mask(pio, sm, pins, pins);
+    pio_gpio_init(pio, sda);
+    pio_gpio_init(pio, scl);
+    gpio_set_oeover(sda, GPIO_OVERRIDE_INVERT);
+    gpio_set_oeover(scl, GPIO_OVERRIDE_INVERT);
+    pio_sm_set_pins_with_mask(pio, sm, 0u, pins);
+
+    pio_sm_exec(pio, sm, pio_encode_mov_not(pio_y, pio_null));
+
+    pio_sm_init(pio, sm, offset, &config);
+    pio_sm_set_enabled(pio, sm, true);
 }
 
 %}

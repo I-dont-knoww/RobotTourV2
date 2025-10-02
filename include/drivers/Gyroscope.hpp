@@ -30,11 +30,6 @@ public:
         uint16_t y = static_cast<uint16_t>(m_rawData[1]);
         uint16_t z = static_cast<uint16_t>(m_rawData[2]);
 
-        std::printf(">rawData[0]:%d\n", m_rawData[0]);
-        std::printf(">rawData[1]:%d\n", m_rawData[1]);
-        std::printf(">rawData[2]:%d\n", m_rawData[2]);
-        std::printf(">rawData[3]:%d\n", m_rawData[3]);
-
         Vec3 const direction{ static_cast<float>(std::bit_cast<int16_t>(x)),
                               static_cast<float>(std::bit_cast<int16_t>(y)),
                               static_cast<float>(std::bit_cast<int16_t>(z)) };
