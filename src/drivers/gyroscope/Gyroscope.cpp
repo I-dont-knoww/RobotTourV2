@@ -18,7 +18,7 @@
 #include <cstddef>
 
 Gyroscope::Gyroscope(PIO pio, uint csPin, uint sckPin, uint misoPin, uint mosiPin, uint intPin)
-    : m_rawDataPtr{ reinterpret_cast<uint32_t>(&m_rawData) } {
+    : m_rawDataPtr{ reinterpret_cast<uint32_t>(&m_rawData[0]) } {
     spi_inst_t* spi = setupRegisterReadWrite(csPin, sckPin, misoPin, mosiPin, intPin);
     setupRegisters(spi, csPin);
 
@@ -142,7 +142,8 @@ void Gyroscope::setupPIORead(PIO pio, uint csPin, uint sckPin, uint misoPin, uin
     channel_config_set_write_increment(&dmaWriteConfig, false);
     channel_config_set_dreq(&dmaWriteConfig, pio_get_dreq(pio, sm, true));
 
-    static uint8_t const s_gyroDataAddress = static_cast<uint8_t>(Bank0::GYRO_DATA_X1) | 0b10000000;
+    static uint32_t const s_gyroDataAddress = static_cast<uint32_t>(Bank0::GYRO_DATA_X1) |
+                                              0b10000000;
     dma_channel_configure(dmaWriteChannel, &dmaWriteConfig, &pio->txf[sm], &s_gyroDataAddress,
                           dma_encode_endless_transfer_count(), true);
 }

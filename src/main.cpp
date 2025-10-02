@@ -241,10 +241,10 @@ void testGyroscope() {
     while (true) {
         time.update();
 
-        auto const& wheels = encoders.data();
+        // auto const& wheels = encoders.data();
 
         std::printf(">angularVelocity:%.5f\n", gyroscope.angularVelocity());
-        std::printf(">leftWheelSpeed:%.5f\n>rightWheelSpeed:%.5f\n", wheels.x, wheels.y);
+        // std::printf(">leftWheelSpeed:%.5f\n>rightWheelSpeed:%.5f\n", wheels.x, wheels.y);
 
         sleep_ms(10);
     }
@@ -301,6 +301,7 @@ void testCompass() {
     //     });
     // Flash::store(compassCalibration);
     compass.setCalibration(Flash::load<Compass::Calibration>());
+    compass.switchToPIO(pio1, Pins::Compass::SDA, Pins::Compass::SCL);
 
     ledRGB.setRGB(Status::READY_TO_RUN);
     startButton.waitForClick();
@@ -315,7 +316,7 @@ void testCompass() {
         auto const data = compass.getData();
         std::printf(">heading:%.5f\n", data);
 
-        sleep_ms(10);
+        sleep_ms(50);
     }
 }
 
@@ -509,4 +510,4 @@ void testRun() {
     }
 }
 
-int main() { testGyroscope(); }
+int main() { testCompass(); }
