@@ -87,7 +87,8 @@ void Gyroscope::getBias(spi_inst_t* spi, uint csPin) {
                         static_cast<float>(std::bit_cast<int16_t>(y)),
                         static_cast<float>(std::bit_cast<int16_t>(z)) };
     }
-    m_bias /= 131.0f * static_cast<float>(Drivers::Gyroscope::GYRO_CALIBRATION_SAMPLE_COUNT);
+    m_bias /= Drivers::Gyroscope::RESOLUTION *
+              static_cast<float>(Drivers::Gyroscope::GYRO_CALIBRATION_SAMPLE_COUNT);
 }
 
 void Gyroscope::getDown(spi_inst_t* spi, uint csPin) {

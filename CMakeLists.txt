@@ -50,6 +50,8 @@ add_executable(
     src/filters/LagFilter.cpp
     src/filters/RCFilter.cpp
 
+    src/fusion/Fusion.cpp
+
     src/kinematics/ForwardKinematics.cpp
     src/kinematics/InverseKinematics.cpp
 
@@ -60,6 +62,8 @@ add_executable(
 
     src/regulators/CurrentRegulator.cpp
     src/regulators/VelocityRegulator.cpp
+
+    src/test.cpp
 )
 
 pico_generate_pio_header(
@@ -78,6 +82,7 @@ target_link_libraries(
     hardware_flash
     hardware_gpio
     hardware_i2c
+    hardware_irq
     hardware_pwm
     hardware_pio
     hardware_spi
@@ -87,6 +92,7 @@ target_link_libraries(
     pico_multicore
     pico_stdlib
     pico_sync
+    pico_time
 )
 
 target_include_directories(

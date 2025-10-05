@@ -24,7 +24,8 @@ public:
         float angularVelocity{};
     };
 
-    void update(Vec2 const& wheelAngles, std::optional<float> gyroscopeHeading, float dt);
+    void update(Vec2 const& wheelAngles, std::optional<float> heading,
+                std::optional<float> angularVelocity, float dt);
 
     constexpr decltype(auto) state(this auto&& self) {
         return std::forward_like<decltype(self)>(self.m_state);
@@ -43,5 +44,5 @@ private:
 
     Vec2 m_prevPosition{ 0.0f, 0.0f };
     Vec2 m_prevWheelAngles{};
-    float m_prevTheta{ Constants::PI / 2 };
+    float m_prevTheta = Constants::PI / 2.0f;
 };

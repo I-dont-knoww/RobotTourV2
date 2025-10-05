@@ -28,10 +28,10 @@ namespace Drivers {
     }
 
     namespace Gyroscope {
-        inline constexpr float RESOLUTION = 131.0f;
+        inline constexpr float RESOLUTION = 32.8f * 180.0f / Constants::PI;
 
-        inline constexpr size_t GYRO_CALIBRATION_SAMPLE_COUNT = 2000u;
-        inline constexpr size_t DOWN_DIRECTION_SAMPLE_COUNT = 2000u;
+        inline constexpr size_t GYRO_CALIBRATION_SAMPLE_COUNT = 4096u;
+        inline constexpr size_t DOWN_DIRECTION_SAMPLE_COUNT = 4096u;
     }
 
     namespace LedRGB {
@@ -52,6 +52,17 @@ namespace Drivers {
         inline constexpr uint16_t PWM_WRAP = MAX_POWER - 1u;
         inline constexpr uint32_t TARGET_CLK_FREQUENCY = PWM_FREQUENCY * MAX_POWER;
     }
+}
+
+namespace Integration {
+    inline constexpr float FAST_LOOP_HZ = 32.0e3f;
+    inline constexpr float SLOW_LOOP_HZ = 200.0f;
+    
+    inline constexpr float FAST_LOOP_DT = 1.0f / FAST_LOOP_HZ;
+    inline constexpr float SLOW_LOOP_DT = 1.0f / SLOW_LOOP_HZ;
+
+    inline constexpr int64_t FAST_LOOP_US = static_cast<uint64_t>(FAST_LOOP_DT * 1.0e6f);
+    inline constexpr int64_t SLOW_LOOP_US = static_cast<uint64_t>(SLOW_LOOP_DT * 1.0e6f);
 }
 
 namespace Kinematics {
@@ -226,12 +237,6 @@ namespace Status {
     inline constexpr Vec3 RUNNING{ 0.0f, 0.0f, 1.0f };
 
     inline constexpr Vec3 FINISHED{ 0.0f, 1.0f, 0.0f };
-}
-
-namespace Storage {
-    namespace Flash {
-        
-    }
 }
 
 namespace Track {

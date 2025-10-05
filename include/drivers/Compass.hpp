@@ -78,7 +78,7 @@ public:
         setupContinuousRead(pio, sdaPin, sclPin);
     }
 
-    float getData() {
+    float getHeading() {
         uint16_t x = static_cast<uint16_t>(m_rawData[0]);
         uint16_t y = static_cast<uint16_t>(m_rawData[1]);
         uint16_t z = static_cast<uint16_t>(m_rawData[2]);

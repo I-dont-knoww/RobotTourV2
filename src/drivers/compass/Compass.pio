@@ -84,31 +84,6 @@ static inline void compass_program_init(PIO pio, uint sm, uint offset, uint sda,
 
     pio_sm_init(pio, sm, offset, &config);
     pio_sm_set_enabled(pio, sm, true);
-    float clkdiv = clock_get_hz(clk_sys) * 325.0e-9f;
-
-    pio_sm_config config = compass_program_get_default_config(offset);
-    sm_config_set_in_pin_base(&config, sda);
-    sm_config_set_out_pin_base(&config, sda);
-    sm_config_set_set_pin_base(&config, sda);
-    sm_config_set_sideset_pin_base(&config, scl);
-    sm_config_set_jmp_pin(&config, scl);
-    sm_config_set_clkdiv(&config, clkdiv);
-
-    uint32_t pins = (1u << sda) | (1u << scl);
-    gpio_pull_up(sda);
-    gpio_pull_up(scl);
-    pio_sm_set_pins_with_mask(pio, sm, pins, pins);
-    pio_sm_set_pindirs_with_mask(pio, sm, pins, pins);
-    pio_gpio_init(pio, sda);
-    pio_gpio_init(pio, scl);
-    gpio_set_oeover(sda, GPIO_OVERRIDE_INVERT);
-    gpio_set_oeover(scl, GPIO_OVERRIDE_INVERT);
-    pio_sm_set_pins_with_mask(pio, sm, 0u, pins);
-
-    pio_sm_exec(pio, sm, pio_encode_mov_not(pio_y, pio_null));
-
-    pio_sm_init(pio, sm, offset, &config);
-    pio_sm_set_enabled(pio, sm, true);
 }
 
 %}
