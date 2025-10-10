@@ -32,8 +32,8 @@ void ForwardKinematics::update(Vec2 const& wheelAngles, std::optional<float> hea
     m_state.velocity.x = m_velocityXFilter.update(velocity.x, dt);
     m_state.velocity.y = m_velocityYFilter.update(velocity.y, dt);
 
-    m_state.wheelSpeeds.x = m_leftWheelSpeedFilter.update(dWheelAngleLeft / dt, dt);
-    m_state.wheelSpeeds.y = m_rightWheelSpeedFilter.update(dWheelAngleRight / dt, dt);
+    m_state.wheelSpeeds.x = m_leftWheelSpeedFilter.update(dWheelAngleLeft.toFloat() / dt, dt);
+    m_state.wheelSpeeds.y = m_rightWheelSpeedFilter.update(dWheelAngleRight.toFloat() / dt, dt);
 
     m_prevPosition = m_state.position;
     m_prevWheelAngles = wheelAngles;

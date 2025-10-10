@@ -2,8 +2,6 @@
 
 #include "Constants.hpp"
 
-#include <cstdio>
-
 class Fusion {
 public:
     Fusion() = default;

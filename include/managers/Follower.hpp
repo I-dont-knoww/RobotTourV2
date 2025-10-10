@@ -16,6 +16,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <optional>
 
 using uint = unsigned int;
 
@@ -33,20 +34,17 @@ public:
         if (m_finished) return { 0.0f, 0.0f };
 
         float linearSpeed = 0.0f;
-        float angularSpeed = 0.0f;
+        float angle = 0.0f;
 
         if (m_mode == movement) {
             linearSpeed = m_linearManager.update(currentPosition, currentTime, dt);
-            angularSpeed = m_headingManager.update(currentPosition, currentAngle, dt);
-        } else if (m_mode == rotation) angularSpeed = m_rotationManager.update(currentAngle, dt);
+            angle = m_headingManager.update(currentPosition, dt);
+        } else if (m_mode == rotation) angle = m_rotationManager.update(currentAngle, dt);
 
-        if (m_exitCondition.check(m_linearManager.targetPosition(), currentPosition,
-                                  m_rotationManager.targetAngle(), currentAngle))
+        if (m_exitCondition.check(currentPosition, currentAngle))
             m_finished = setupNextMode(currentPosition);
 
-        // std::printf(">linearSpeed:%.5f\n>angularSpeed:%.5f\n>mode:%d\n>index:%d\n", linearSpeed,
-        //             angularSpeed, m_mode, m_index);
-        return { linearSpeed, angularSpeed };
+        return { linearSpeed, angle };
     }
 
 private:
@@ -65,7 +63,8 @@ private:
             distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_ACCURATE;
         else if (flags & Path::STOP) distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_FAST;
 
-        m_exitCondition.set(distanceThreshold, ExitCondition::NO_THRESHOLD);
+        m_exitCondition.set({ { currentPosition, path.position, distanceThreshold } },
+                            std::nullopt);
 
         m_mode = movement;
     }
@@ -74,8 +73,11 @@ private:
         Path const& previousPath = m_path[m_index - 1];
         Path const& path = m_path[m_index];
 
-        m_rotationManager.set((path.position - previousPath.position).angle());
-        m_exitCondition.set(ExitCondition::NO_THRESHOLD, Manager::Follower::ANGLE_THRESHOLD);
+        Radians targetAngle{ (path.position - previousPath.position).angle() };
+        if (path.flags & Path::REVERSE) targetAngle += Radians{ Constants::PI };
+
+        m_rotationManager.set(targetAngle);
+        m_exitCondition.set(std::nullopt, { { targetAngle, Manager::Follower::ANGLE_THRESHOLD } });
 
         m_mode = rotation;
     }
@@ -100,7 +102,7 @@ private:
     std::array<Path, N> m_path{};
     std::array<float, N> m_targetTimes{};
 
-    Movement m_linearManager{};
+    Linear m_linearManager{};
     Heading m_headingManager{};
     Rotation m_rotationManager{};
 

@@ -15,8 +15,6 @@
 #include <cstdint>
 #include <iterator>
 
-#include <cstdio>
-
 Compass::Compass(Vec3 const& down, uint sdaPin, uint sclPin)
     : Compass{ std::atan2f(down.y, down.z), std::atan2f(-down.x, Vec2{ down.y, down.z }.length()),
                sdaPin, sclPin } {}

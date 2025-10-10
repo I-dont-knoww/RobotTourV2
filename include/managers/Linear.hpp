@@ -3,14 +3,14 @@
 #include "Constants.hpp"
 
 #include "control/Controller.hpp"
-#include "control/pid/IController.hpp"
+#include "control/feedfoward/SController.hpp"
 #include "control/pid/PController.hpp"
 
 #include "state/Vector.hpp"
 
-class Movement {
+class Linear {
 public:
-    Movement() = default;
+    Linear() = default;
 
     void set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime, bool reverse,
              bool stop) {
@@ -28,11 +28,8 @@ public:
     float update(Vec2 const& currentPosition, float currentTime, float dt);
 
 private:
-    Controller<PController, IController> m_positionController{
-        { Manager::Position::kP },
-        { Manager::Position::kI, -Manager::Position::INTEGRATOR_BOUND,
-          Manager::Position::INTEGRATOR_BOUND }
-    };
+    Controller<PController, SController> m_positionController{ { Manager::Position::kP },
+                                                               { Manager::Position::kS } };
 
     Vec2 m_startPosition{};
     Vec2 m_targetPosition{};

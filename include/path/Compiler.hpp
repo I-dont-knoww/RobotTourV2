@@ -77,10 +77,10 @@ namespace Compiler {
             if (i == commands.size() - 1) {
                 segment.flags |= Path::STOP;
                 segment.flags |= Path::ACCURATE;
-            } else {
-                if (Vec2::dot(command.amount, nextCommand.amount) < 0.0f)
-                    segment.flags |= Path::STOP;
-            }
+            } else if (Vec2::dot(command.amount, nextCommand.amount) < 0.0f ||
+                       command.flags & Path::REVERSE != command.flags & Path::REVERSE)
+                segment.flags |= Path::STOP;
+
             path[i] = segment;
         }
 

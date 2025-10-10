@@ -17,11 +17,9 @@ public:
         m_reverse = reverse;
     }
 
-    float update(Vec2 const& currentPosition, Radians currentAngle, float dt);
+    float update(Vec2 const& currentPosition, float dt);
 
 private:
-    Controller<PController> m_headingController{ { Manager::Heading::kP } };
-
     Vec2 m_targetPosition{};
     bool m_reverse{};
 };

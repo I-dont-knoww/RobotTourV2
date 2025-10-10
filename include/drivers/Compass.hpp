@@ -13,8 +13,6 @@
 #include <concepts>
 #include <cstdint>
 
-#include <cstdio>
-
 class Compass {
 public:
     struct Calibration {

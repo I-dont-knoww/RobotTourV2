@@ -14,8 +14,6 @@
 #include <cstddef>
 #include <type_traits>
 
-#include <cstdio>
-
 class Gyroscope {
 public:
     Gyroscope(PIO pio, uint csPin, uint sckPin, uint misoPin, uint mosiPin, uint intPin);

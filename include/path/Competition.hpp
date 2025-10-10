@@ -10,14 +10,15 @@
 namespace Competition {
     using namespace Compiler::Tokens;
 
-    inline constexpr float TARGET_TIME = 1.0f;
+    inline constexpr float TARGET_TIME = 6.0f;
     inline constexpr auto PATH = Compiler::compile(std::to_array<Compiler::Command>({
         // clang-format off
 
         // moveby(0.0f * UP) & CENTIMETERS & STOP,
         // moveby(10.0f * LEFT) & CENTIMETERS,
 
-        moveby(UP)
+        moveby(10.0f * UP) & CENTIMETERS & STOP,
+        moveby(40.0f * RIGHT) & CENTIMETERS
         
         // moveby(UP) & STOP,
         // moveby(LEFT) & STOP,

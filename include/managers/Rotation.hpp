@@ -20,11 +20,5 @@ public:
     float update(Radians currentAngle, float dt);
 
 private:
-    Controller<PController, IController> m_rotationController{
-        { Manager::Rotation::kP },
-        { Manager::Rotation::kI, -Manager::Rotation::INTEGRATOR_BOUND,
-          Manager::Rotation::INTEGRATOR_BOUND }
-    };
-
     Radians m_targetAngle{};
 };

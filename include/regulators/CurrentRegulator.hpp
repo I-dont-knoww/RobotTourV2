@@ -17,28 +17,15 @@
 
 class CurrentRegulator {
 public:
-    CurrentRegulator(Motors& motors, float batteryVoltage);
+    CurrentRegulator() = default;
 
-    void update(Vec2 const& wheelSpeeds, float batteryVoltage, float dt);
+    Vec2 update(Vec2 const& wheelSpeeds, float batteryVoltage, float dt);
 
-    void spin(float current) { spin(current, current); }
-    void spin(float targetLeftCurrent, float targetRightCurrent) {
-        m_targetLeftCurrent = targetLeftCurrent;
-        m_targetRightCurrent = targetRightCurrent;
+    void setTargetVoltage(float voltage) { setTargetVoltage(voltage, voltage); }
+    void setTargetVoltage(float targetLeftVoltage, float targetRightVoltage) {
+        m_targetVoltages = { targetLeftVoltage, targetRightVoltage };
     }
 
 private:
-    Controller<PController, IController> m_leftController;
-    Controller<PController, IController> m_rightController;
-
-    RCFilter m_leftCurrentFilter{ Regulators::Current::RC_FILTER_CUTOFF_FREQUENCY };
-    RCFilter m_rightCurrentFilter{ Regulators::Current::RC_FILTER_CUTOFF_FREQUENCY };
-
-    LagFilter m_leftTargetFilter{ Regulators::Current::LAG_FILTER_K };
-    LagFilter m_rightTargetFilter{ Regulators::Current::LAG_FILTER_K };
-
-    Motors& m_motors;
-
-    float m_targetLeftCurrent = 0.0f;
-    float m_targetRightCurrent = 0.0f;
+    Vec2 m_targetVoltages{ 0.0f, 0.0f };
 };

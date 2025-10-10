@@ -51,8 +51,8 @@ Motors::CurrentSensor::CurrentSensor(uint leftCurrentPin, uint rightCurrentPin) 
     adc_gpio_init(leftCurrentPin);
     adc_gpio_init(rightCurrentPin);
 
-    m_bias.x = getBias(leftCurrentPin);
-    m_bias.y = getBias(rightCurrentPin);
+    // m_bias.x = getBias(leftCurrentPin);
+    // m_bias.y = getBias(rightCurrentPin);
     setupRead(leftCurrentPin, rightCurrentPin);
 }
 

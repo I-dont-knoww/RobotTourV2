@@ -23,7 +23,6 @@
 #include "regulators/VelocityRegulator.hpp"
 
 #include "storage/Atomic.hpp"
-// #include "storage/Flash.hpp"
 
 #include "hardware/irq.h"
 #include "hardware/timer.h"
@@ -39,55 +38,114 @@
 
 static Atomic<ForwardKinematics::State> atomicForwardKinematicsState{};
 
-static bool volatile core1Ready = false;
+enum CoreStatus : uint8_t {
+    INITIALIZING = 0u,
+    INITIALIZED = 1u,
+    CALIBRATING = 2u,
+    CALIBRATED = 3u,
+    STARTING = 4u,
+    RUNNING = 5u,
+    FINISHED = 6u,
+};
+static CoreStatus volatile core0Status = INITIALIZING;
+static CoreStatus volatile core1Status = INITIALIZING;
 
 void core0() {
-    auto core0Loop = [&]() -> void {
-        auto const state = atomicForwardKinematicsState.load();
+    Button button{ Pins::BUTTON };
+    LedRGB ledRGB{ Pins::LedRGB::RED, Pins::LedRGB::GREEN, Pins::LedRGB::BLUE };
 
-        std::printf(">location:%.5f:%.5f|xy\n", state.position.x, state.position.y);
-        std::printf(">x:%.5f\n>y:%.5f\n>angle:%.5f\n>anglularVelocity:%.5f\n", state.position.x,
-                    state.position.y, state.angle, state.angularVelocity);
-        std::printf(">xVel:%.5f\n>yVel:%.5f\n", state.velocity.x, state.velocity.y);
-        std::printf(">leftWheelSpeed:%.5f\n>rightWheelSpeed:%.5f\n", state.wheelSpeeds.x,
-                    state.wheelSpeeds.y);
+    CurrentRegulator currentRegulator{};
+    VelocityRegulator velocityRegulator{};
+    Follower follower{ Competition::PATH, Competition::TARGET_TIMES };
+
+    core0Status = INITIALIZED;
+    while (core1Status < INITIALIZED) tight_loop_contents();
+
+    ledRGB.setRGB(Status::READY_FOR_MOTIONLESS_CALIBRATION);
+    button.waitForClick();
+    ledRGB.setRGB(Status::MOTIONLESS_CALIBRATING);
+    core0Status = CALIBRATING;
+
+    Battery battery{ Pins::Battery::VOLTAGE_SENSE };
+    Motors motors{ Pins::Motors::LEFT_MOTOR_IN1,     Pins::Motors::LEFT_MOTOR_IN2,
+                   Pins::Motors::RIGHT_MOTOR_IN1,    Pins::Motors::RIGHT_MOTOR_IN2,
+                   Pins::Motors::LEFT_MOTOR_CURRENT, Pins::Motors::RIGHT_MOTOR_CURRENT };
+
+    core0Status = CALIBRATED;
+    while (core1Status < CALIBRATED) tight_loop_contents();
+
+    ledRGB.setRGB(Status::READY_TO_RUN);
+    button.waitForClick();
+    ledRGB.setRGB(Status::RUNNING);
+    core0Status = STARTING;
+
+    Time time{};
+    time.reset();
+
+    core0Status = RUNNING;
+
+    auto core0Loop = [&]() {
+        auto const state = atomicForwardKinematicsState.load();
+        // std::printf(">x:%.5f\n>y:%.5f\n>angle:%.5f\n>anglularVelocity:%.5f\n", state.position.x,
+        //             state.position.y, state.angle, state.angularVelocity);
+        // std::printf(">xVel:%.5f\n>yVel:%.5f\n", state.velocity.x, state.velocity.y);
+
+        time.update();
+        Vec2 const targetParameters = follower.update(state.position, state.angle, time.elapsed(),
+                                                      Integration::SLOW_LOOP_DT);
+
+        velocityRegulator.setTargets(targetParameters.x, targetParameters.y);
+        Vec2 const targetVoltages = velocityRegulator.update(
+            state.velocity, state.angle, battery.voltage(), Integration::SLOW_LOOP_DT);
+
+        currentRegulator.setTargetVoltage(targetVoltages.x, targetVoltages.y);
+        Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage(),
+                                                           Integration::SLOW_LOOP_DT);
+        motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
+
+        if (follower.finished()) {
+            core0Status = FINISHED;
+            return false;
+        }
+        return true;
     };
 
-    auto thunk = [](repeating_timer_t* timer) -> bool {
-        (*static_cast<decltype(core0Loop)*>(timer->user_data))();
-        return true;
+    auto thunk = [](repeating_timer_t* timer) {
+        return (*static_cast<decltype(core0Loop)*>(timer->user_data))();
     };
 
     alarm_pool_t* core0AlarmPool = alarm_pool_create_with_unused_hardware_alarm(1u);
     irq_set_priority(hardware_alarm_get_irq_num(alarm_pool_hardware_alarm_num(core0AlarmPool)),
-                     0b11000000);
-
-    while (!core1Ready) tight_loop_contents();
+                     0b11110000);
 
     repeating_timer_t timer;
     alarm_pool_add_repeating_timer_us(core0AlarmPool, -Integration::SLOW_LOOP_US, thunk, &core0Loop,
                                       &timer);
 
-    while (true) tight_loop_contents();
+    while (core0Status < FINISHED) tight_loop_contents();
+    Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
+    float const finalTime = time.elapsed();
+
+    motors.spin(0.0f);
+    ledRGB.setRGB(Status::FINISHED);
+
+    while (true) {
+        std::printf("Finished with position (%.5f, %.5f) and time %.5f\n", finalPosition.x,
+                    finalPosition.y, finalTime);
+        sleep_ms(1000);
+    }
 }
 
 void core1() {
-    Battery battery{ Pins::Battery::VOLTAGE_SENSE };
-    Button button{ Pins::BUTTON };
-    LedRGB ledRGB{ Pins::LedRGB::RED, Pins::LedRGB::GREEN, Pins::LedRGB::BLUE };
-
     Encoders encoders{ pio0, Pins::Encoders::CS_LEFT, Pins::Encoders::CS_RIGHT, Pins::Encoders::SCK,
                        Pins::Encoders::MISO };
-    Motors motors{ Pins::Motors::LEFT_MOTOR_IN1,     Pins::Motors::LEFT_MOTOR_IN2,
-                   Pins::Motors::RIGHT_MOTOR_IN1,    Pins::Motors::RIGHT_MOTOR_IN2,
-                   Pins::Motors::LEFT_MOTOR_CURRENT, Pins::Motors::RIGHT_MOTOR_CURRENT };
 
     Fusion fusion{};
     ForwardKinematics forwardKinematics{ encoders.data() };
 
-    ledRGB.setRGB(Status::READY_FOR_MOTIONLESS_CALIBRATION);
-    button.waitForClick();
-    ledRGB.setRGB(Status::MOTIONLESS_CALIBRATING);
+    core1Status = INITIALIZED;
+    while (core0Status < CALIBRATING) tight_loop_contents();
+    core1Status = CALIBRATING;
 
     Gyroscope gyroscope{ pio0,
                          Pins::Gyroscope::CS,
@@ -96,27 +154,26 @@ void core1() {
                          Pins::Gyroscope::MOSI,
                          Pins::Gyroscope::INT };
 
-    ledRGB.setRGB(Status::READY_TO_RUN);
-    button.waitForClick();
-    ledRGB.setRGB(Status::RUNNING);
+    core1Status = CALIBRATED;
+    while (core0Status < RUNNING) tight_loop_contents();
 
-    auto core1Loop = [&]() -> void {
+    auto core1Loop = [&]() {
         forwardKinematics.update(
             encoders.data(), fusion.update(gyroscope.angularVelocity(), Integration::FAST_LOOP_DT),
             gyroscope.angularVelocity(), Integration::FAST_LOOP_DT);
+
+        auto const& state = forwardKinematics.state();
         atomicForwardKinematicsState.store(forwardKinematics.state());
     };
 
-    auto thunk = [](repeating_timer_t* timer) -> bool {
+    auto thunk = [](repeating_timer_t* timer) {
         (*static_cast<decltype(core1Loop)*>(timer->user_data))();
         return true;
     };
 
     alarm_pool_t* core1AlarmPool = alarm_pool_create_with_unused_hardware_alarm(1u);
     irq_set_priority(hardware_alarm_get_irq_num(alarm_pool_hardware_alarm_num(core1AlarmPool)),
-                     0b11000000);
-
-    core1Ready = true;
+                     0b11110000);
 
     repeating_timer_t timer;
     alarm_pool_add_repeating_timer_us(core1AlarmPool, -Integration::FAST_LOOP_US, thunk, &core1Loop,

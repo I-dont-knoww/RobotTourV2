@@ -62,8 +62,6 @@ add_executable(
 
     src/regulators/CurrentRegulator.cpp
     src/regulators/VelocityRegulator.cpp
-
-    src/test.cpp
 )
 
 pico_generate_pio_header(

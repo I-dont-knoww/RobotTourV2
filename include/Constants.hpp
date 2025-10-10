@@ -30,7 +30,7 @@ namespace Drivers {
     namespace Gyroscope {
         inline constexpr float RESOLUTION = 32.8f * 180.0f / Constants::PI;
 
-        inline constexpr size_t GYRO_CALIBRATION_SAMPLE_COUNT = 4096u;
+        inline constexpr size_t GYRO_CALIBRATION_SAMPLE_COUNT = 32768u;
         inline constexpr size_t DOWN_DIRECTION_SAMPLE_COUNT = 4096u;
     }
 
@@ -56,8 +56,9 @@ namespace Drivers {
 
 namespace Integration {
     inline constexpr float FAST_LOOP_HZ = 32.0e3f;
+    // inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
     inline constexpr float SLOW_LOOP_HZ = 200.0f;
-    
+
     inline constexpr float FAST_LOOP_DT = 1.0f / FAST_LOOP_HZ;
     inline constexpr float SLOW_LOOP_DT = 1.0f / SLOW_LOOP_HZ;
 
@@ -81,8 +82,8 @@ namespace Kinematics {
 
 namespace Manager {
     namespace Follower {
-        inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 1.0f;
-        inline constexpr float DISTANCE_THRESHOLD_FAST = 3.0f;
+        inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
+        inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
         inline constexpr float TURNING_RADIUS = 3.0f;
         // inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
         // inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
@@ -99,15 +100,14 @@ namespace Manager {
     }
 
     namespace Position {
-        inline constexpr float kP = 3.0f;
-        inline constexpr float kI = 0.001f;
+        inline constexpr float kP = 5.0f;
+        inline constexpr float kS = -3.0f;
 
         inline constexpr float MIN_SPEED = 3.0f;
-        inline constexpr float INTEGRATOR_BOUND = 0.05f;
     }
 
     namespace Rotation {
-        inline constexpr float kP = 5.0f;
+        inline constexpr float kP = 10.0f;
         inline constexpr float kI = 1.0f;
 
         inline constexpr float INTEGRATOR_BOUND = 1.0f;
@@ -170,58 +170,42 @@ namespace Pins {
 
 namespace Regulators {
     namespace Current {
-        inline constexpr float kP = 60.0f;
-        inline constexpr float kI = 30.0f;
+        inline constexpr float MAX_CURRENT = 0.4f;
 
-        inline constexpr float RC_FILTER_CUTOFF_FREQUENCY = 10.0f;
-        inline constexpr float LAG_FILTER_K = 0.1f;
+        inline constexpr Vec2 RESISTANCE{ 3.30982f, 3.33778f };
+        inline constexpr Vec2 FREE_ANGULAR_VEL{ 91.0553f, 90.0371f };
+        inline constexpr Vec2 FREE_VOLTAGE{ 10.5f, 10.5f };
+        inline constexpr Vec2 FREE_CURRENT{ 0.0576f, 0.0608f };
 
-        inline constexpr float RAD_PER_SEC_12V = 95.923f;
-        inline constexpr float kV = 12.0f / RAD_PER_SEC_12V;
+        inline constexpr Vec2 KV = FREE_ANGULAR_VEL / (FREE_VOLTAGE - FREE_CURRENT * RESISTANCE);
     }
 
     namespace Velocity {
-        inline constexpr float MAX_CURRENT = 0.45f;
-        // inline constexpr float MAX_CURRENT = 1.0f;
-        inline constexpr float ANGULAR_VELOCITY_MIN_CURRENT_BUDGET = 0.3f;
-        inline constexpr float LINEAR_VELOCITY_CURRENT_BUDGET = 1.0f -
-                                                                ANGULAR_VELOCITY_MIN_CURRENT_BUDGET;
+        inline constexpr float ANGLE_CONTROL_MIN_VOLTAGE_BUDGET = 0.3f;
+        inline constexpr float LINEAR_VELOCITY_VOLTAGE_BUDGET = 1.0f -
+                                                                ANGLE_CONTROL_MIN_VOLTAGE_BUDGET;
 
         namespace Linear {
-            // inline constexpr float kP = 0.03f;
-            // inline constexpr float kI = 0.1f; // 0.1f
-            // inline constexpr float kD = 0.1f;
-            // inline constexpr float kPIntegrator = 0.03f; // 0.5f
-            // inline constexpr float kPControl = 0.0f; // 0.1f
-            // inline constexpr float kD = 0.0f; // 0.2f
-            inline constexpr float kV = 0.001f;
+            inline constexpr float kS = 0.4f;
+            inline constexpr float kV = 0.081f;
             inline constexpr float kA = 0.0f;
-            inline constexpr float kP = 0.00f;
+            inline constexpr float kP = 0.08f;
+            inline constexpr float kI = 0.08f;
 
             inline constexpr float MIN_INT = -1.0f;
             inline constexpr float MAX_INT = 1.0f;
 
-            inline constexpr float CUTOFF_FREQUENCY = 10.0f; // 0.1f
+            inline constexpr float CUTOFF_FREQUENCY = 10.0f;
 
-            inline constexpr float LAG_FILTER_K = 0.005f;
+            inline constexpr float LAG_FILTER_K = 0.05f;
         }
 
         namespace Angular {
-            // inline constexpr float kP = 0.5f;
-            // inline constexpr float kI = 0.0f; // 0.6f
-            // inline constexpr float kD = 0.0f; // 0.5f
-            inline constexpr float kV = 0.0f;
-            inline constexpr float kA = 0.0f;
+            inline constexpr float kS = 0.1f;
             inline constexpr float kP = 2.0f;
-            inline constexpr float kD = 0.0f;
+            inline constexpr float kI = 1.0f;
 
-            inline constexpr float MIN_INT = -1.0f;
-            inline constexpr float MAX_INT = 1.0f;
-
-            inline constexpr float CUTOFF_FREQUENCY = 0.1f; // 0.1f
-            inline constexpr float ALPHA = 0.5f;
-
-            inline constexpr float LAG_FILTER_K = 0.5f;
+            inline constexpr float INT_BOUND = 1.0f;
         }
     }
 }
