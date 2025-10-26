@@ -3,7 +3,7 @@
 #include "Constants.hpp"
 
 #include "control/Controller.hpp"
-#include "control/pid/IController.hpp"
+#include "control/feedforward/SController.hpp"
 #include "control/pid/PController.hpp"
 
 #include "state/Radians.hpp"
@@ -20,5 +20,8 @@ public:
     float update(Radians currentAngle, float dt);
 
 private:
+    Controller<SController, PController> m_rotationController{ { Manager::Rotation::kS },
+                                                               { Manager::Rotation::kP } };
+
     Radians m_targetAngle{};
 };

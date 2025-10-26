@@ -16,11 +16,11 @@ void ForwardKinematics::update(Vec2 const& wheelAngles, std::optional<float> hea
     Radians const dWheelAngleLeft{ wheelAngles.x - m_prevWheelAngles.x };
     Radians const dWheelAngleRight{ wheelAngles.y - m_prevWheelAngles.y };
 
-    float const dLeft = Kinematics::WHEEL_RADIUS * dWheelAngleLeft.toFloat();
-    float const dRight = Kinematics::WHEEL_RADIUS * dWheelAngleRight.toFloat();
+    float const dLeft = Chassis::WHEEL_RADIUS * dWheelAngleLeft.toFloat();
+    float const dRight = Chassis::WHEEL_RADIUS * dWheelAngleRight.toFloat();
     float const d = (dLeft + dRight) / 2.0f;
 
-    float const deltaTheta = (dRight - dLeft) / Kinematics::AXLE_LENGTH;
+    float const deltaTheta = (dRight - dLeft) / Chassis::AXLE_LENGTH;
     float const theta = heading.value_or(m_prevTheta + deltaTheta);
 
     m_state.position += Vec2::fromPolar(d, m_prevTheta + deltaTheta / 2.0f);

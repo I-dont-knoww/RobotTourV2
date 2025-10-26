@@ -3,7 +3,7 @@
 #include "Constants.hpp"
 
 #include "control/Controller.hpp"
-#include "control/feedfoward/SController.hpp"
+#include "control/feedforward/SController.hpp"
 #include "control/pid/PController.hpp"
 
 #include "state/Vector.hpp"
@@ -25,7 +25,8 @@ public:
 
     Vec2 targetPosition() const { return m_targetPosition; };
 
-    float update(Vec2 const& currentPosition, float currentTime, float dt);
+    float update(Vec2 const& currentPosition, Vec2 const& currentVelocity, float angularVelocity,
+                 float currentTime, float dt);
 
 private:
     Controller<PController, SController> m_positionController{ { Manager::Position::kP },

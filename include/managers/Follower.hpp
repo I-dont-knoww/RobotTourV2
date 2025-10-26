@@ -2,6 +2,8 @@
 
 #include "Constants.hpp"
 
+#include "kinematics/ForwardKinematics.hpp"
+
 #include "managers/ExitCondition.hpp"
 #include "managers/Heading.hpp"
 #include "managers/Linear.hpp"
@@ -30,19 +32,21 @@ public:
 
     bool finished() { return m_finished; }
 
-    Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float currentTime, float dt) {
+    Vec2 update(ForwardKinematics::State const& state, float currentTime, float dt) {
         if (m_finished) return { 0.0f, 0.0f };
 
         float linearSpeed = 0.0f;
         float angle = 0.0f;
 
         if (m_mode == movement) {
-            linearSpeed = m_linearManager.update(currentPosition, currentTime, dt);
-            angle = m_headingManager.update(currentPosition, dt);
-        } else if (m_mode == rotation) angle = m_rotationManager.update(currentAngle, dt);
+            linearSpeed = m_linearManager.update(state.position, state.velocity,
+                                                 state.angularVelocity, currentTime, dt);
+            angle = m_headingManager.update(state.position, state.velocity, Radians{ state.angle },
+                                            dt);
+        } else if (m_mode == rotation) angle = m_rotationManager.update(state.angle, dt);
 
-        if (m_exitCondition.check(currentPosition, currentAngle))
-            m_finished = setupNextMode(currentPosition);
+        if (m_exitCondition.check(state.position, state.angle))
+            m_finished = setupNextMode(state.position);
 
         return { linearSpeed, angle };
     }
@@ -55,7 +59,7 @@ private:
 
         m_linearManager.set(currentPosition, path.position, targetTime, flags & Path::REVERSE,
                             flags & Path::STOP);
-        m_headingManager.set(path.position, flags & Path::REVERSE);
+        m_headingManager.set(currentPosition, path.position, flags & Path::REVERSE);
 
         float distanceThreshold = Manager::Follower::TURNING_RADIUS;
 
@@ -97,7 +101,7 @@ private:
         return false;
     }
 
-    enum Mode { none, movement, rotation };
+    enum Mode { none, wait, movement, rotation };
 
     std::array<Path, N> m_path{};
     std::array<float, N> m_targetTimes{};

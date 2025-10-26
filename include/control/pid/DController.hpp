@@ -18,7 +18,7 @@ public:
 
         float const filteredMeasurement = m_filter.update(measurement, dt);
 
-        float const output = m_kD * (filteredMeasurement - m_prevMeasurement) / dt;
+        float const output = -m_kD * (filteredMeasurement - m_prevMeasurement) / dt;
         m_prevMeasurement = filteredMeasurement;
         return output;
     }

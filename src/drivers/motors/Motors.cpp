@@ -10,6 +10,7 @@
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
 
+#include <algorithm>
 #include <cstdint>
 
 Motors::Controller::Controller(uint in1Pin, uint in2Pin)
@@ -33,13 +34,14 @@ Motors::Controller::Controller(uint in1Pin, uint in2Pin)
 }
 
 void Motors::Controller::spin(int power) {
-    m_power = power;
+    m_power = std::clamp(power, -static_cast<int>(Drivers::Motors::MAX_POWER),
+                         static_cast<int>(Drivers::Motors::MAX_POWER));
 
-    if (power > 0) {
+    if (m_power > 0) {
         pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER);
-        pwm_set_chan_level(m_in2Slice, m_in2Channel, Drivers::Motors::MAX_POWER - power);
-    } else if (power < 0) {
-        pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER + power);
+        pwm_set_chan_level(m_in2Slice, m_in2Channel, Drivers::Motors::MAX_POWER - m_power);
+    } else if (m_power < 0) {
+        pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER + m_power);
         pwm_set_chan_level(m_in2Slice, m_in2Channel, Drivers::Motors::MAX_POWER);
     } else {
         pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER);

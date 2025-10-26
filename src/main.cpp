@@ -85,23 +85,24 @@ void core0() {
     core0Status = RUNNING;
 
     auto core0Loop = [&]() {
-        auto const state = atomicForwardKinematicsState.load();
-        // std::printf(">x:%.5f\n>y:%.5f\n>angle:%.5f\n>anglularVelocity:%.5f\n", state.position.x,
-        //             state.position.y, state.angle, state.angularVelocity);
-        // std::printf(">xVel:%.5f\n>yVel:%.5f\n", state.velocity.x, state.velocity.y);
+        // auto const state = atomicForwardKinematicsState.load();
 
-        time.update();
-        Vec2 const targetParameters = follower.update(state.position, state.angle, time.elapsed(),
-                                                      Integration::SLOW_LOOP_DT);
+        // time.update();
+        // Vec2 const targetParameters = follower.update(state, time.elapsed(),
+        //                                               Integration::SLOW_LOOP_DT);
 
-        velocityRegulator.setTargets(targetParameters.x, targetParameters.y);
-        Vec2 const targetVoltages = velocityRegulator.update(
-            state.velocity, state.angle, battery.voltage(), Integration::SLOW_LOOP_DT);
+        // velocityRegulator.setTargets(targetParameters.x, targetParameters.y);
+        // Vec2 const targetVoltages = velocityRegulator.update(
+        //     state.velocity, state.angle, state.angularVelocity, battery.voltage(),
+        //     Integration::SLOW_LOOP_DT);
 
-        currentRegulator.setTargetVoltage(targetVoltages.x, targetVoltages.y);
-        Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage(),
-                                                           Integration::SLOW_LOOP_DT);
-        motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
+        // currentRegulator.setTargetVoltage(targetVoltages.x, targetVoltages.y);
+        // Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage(),
+        //                                                    Integration::SLOW_LOOP_DT);
+
+        // motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
+        motors.spin(static_cast<int>(-static_cast<float>(Drivers::Motors::MAX_POWER * 0.6f * 0.5f)),
+                    static_cast<int>(static_cast<float>(Drivers::Motors::MAX_POWER) * 0.6f * 1.15f));
 
         if (follower.finished()) {
             core0Status = FINISHED;
@@ -141,11 +142,12 @@ void core1() {
                        Pins::Encoders::MISO };
 
     Fusion fusion{};
-    ForwardKinematics forwardKinematics{ encoders.data() };
 
     core1Status = INITIALIZED;
     while (core0Status < CALIBRATING) tight_loop_contents();
     core1Status = CALIBRATING;
+
+    ForwardKinematics forwardKinematics{ encoders.data() };
 
     Gyroscope gyroscope{ pio0,
                          Pins::Gyroscope::CS,

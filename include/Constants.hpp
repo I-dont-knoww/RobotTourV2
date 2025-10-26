@@ -8,6 +8,15 @@
 
 using uint = unsigned int;
 
+namespace Chassis {
+    inline constexpr float AXLE_LENGTH = 13.35f;
+    inline constexpr float WHEEL_RADIUS = 3.01625f;
+
+    inline constexpr float DOWEL_DISTANCE = 2.314066f;
+
+    inline constexpr float MASS = 0.560f;
+}
+
 namespace Constants {
     inline constexpr float PI = std::numbers::pi_v<float>;
     inline constexpr float E = std::numbers::e_v<float>;
@@ -30,7 +39,7 @@ namespace Drivers {
     namespace Gyroscope {
         inline constexpr float RESOLUTION = 32.8f * 180.0f / Constants::PI;
 
-        inline constexpr size_t GYRO_CALIBRATION_SAMPLE_COUNT = 32768u;
+        inline constexpr size_t GYRO_CALIBRATION_SAMPLE_COUNT = 131072u;
         inline constexpr size_t DOWN_DIRECTION_SAMPLE_COUNT = 4096u;
     }
 
@@ -56,8 +65,8 @@ namespace Drivers {
 
 namespace Integration {
     inline constexpr float FAST_LOOP_HZ = 32.0e3f;
-    // inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
-    inline constexpr float SLOW_LOOP_HZ = 200.0f;
+    inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
+    // inline constexpr float SLOW_LOOP_HZ = 200.0f;
 
     inline constexpr float FAST_LOOP_DT = 1.0f / FAST_LOOP_HZ;
     inline constexpr float SLOW_LOOP_DT = 1.0f / SLOW_LOOP_HZ;
@@ -67,9 +76,6 @@ namespace Integration {
 }
 
 namespace Kinematics {
-    inline constexpr float AXLE_LENGTH = 13.35f;
-    inline constexpr float WHEEL_RADIUS = 3.01625f;
-
     namespace Forward {
         inline constexpr size_t MA_FILTER_LENGTH = 50u;
         inline constexpr float RC_FILTER_CUTOFF_FREQUENCY = 10u;
@@ -84,42 +90,41 @@ namespace Manager {
     namespace Follower {
         inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
         inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
-        inline constexpr float TURNING_RADIUS = 3.0f;
-        // inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
-        // inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
-        // inline constexpr float TURNING_RADIUS = 0.0f;
+        inline constexpr float TURNING_RADIUS = 5.0f;
 
         inline constexpr float ANGLE_THRESHOLD = 0.05f;
-
-        inline constexpr float ANGLE_CONTROL_MIN_POWER_BUDGET = 0.7f;
-        inline constexpr float LINEAR_CONTROL_POWER_BUDGET = 1.0f - ANGLE_CONTROL_MIN_POWER_BUDGET;
     }
 
     namespace Heading {
-        inline constexpr float kP = 4.0f;
+        inline constexpr float angularKp = 2.0f;
+        inline constexpr float angularKd = 0.0f;
+        inline constexpr float angularAlpha = 1.0f;
+
+        inline constexpr float lateralScale = 5.0f;
+        inline constexpr float lateralK = 1.0f;
+
+        inline constexpr float MAX_SPEED = 4.0f;
     }
 
     namespace Position {
-        inline constexpr float kP = 5.0f;
-        inline constexpr float kS = -3.0f;
-
-        inline constexpr float MIN_SPEED = 3.0f;
+        inline constexpr float kP = 2.0f;
+        inline constexpr float kS = -5.0f;
     }
 
     namespace Rotation {
-        inline constexpr float kP = 10.0f;
-        inline constexpr float kI = 1.0f;
+        inline constexpr float kS = 2.0f;
+        inline constexpr float kP = 4.0f;
 
-        inline constexpr float INTEGRATOR_BOUND = 1.0f;
-        // inline constexpr float kP = 0.0f;
+        inline constexpr float MAX_SPEED = 5.0f;
     }
 
     namespace Speed {
         inline constexpr float kP = 0.3f;
         inline constexpr float kD = 0.4f;
 
-        inline constexpr float MAX_SPEED = 50.0f;
-
+        inline constexpr float MAX_SPEED = 500.0f;
+        inline constexpr float MAX_CENTRIPETAL = 50.0f;
+        
         inline constexpr float GIVE_UP_TIME = 0.1f;
     }
 }
@@ -184,6 +189,7 @@ namespace Regulators {
         inline constexpr float ANGLE_CONTROL_MIN_VOLTAGE_BUDGET = 0.3f;
         inline constexpr float LINEAR_VELOCITY_VOLTAGE_BUDGET = 1.0f -
                                                                 ANGLE_CONTROL_MIN_VOLTAGE_BUDGET;
+        inline constexpr float OFFSET = 0.85f;
 
         namespace Linear {
             inline constexpr float kS = 0.4f;
@@ -201,11 +207,18 @@ namespace Regulators {
         }
 
         namespace Angular {
-            inline constexpr float kS = 0.1f;
-            inline constexpr float kP = 2.0f;
-            inline constexpr float kI = 1.0f;
+            inline constexpr float kS = 0.0f;
+            inline constexpr float kV = 0.7f;
+            inline constexpr float kA = 0.0f;
+            inline constexpr float kP = 1.0f;
+            inline constexpr float kI = 0.0f;
 
-            inline constexpr float INT_BOUND = 1.0f;
+            inline constexpr float MIN_INT = -10.0f;
+            inline constexpr float MAX_INT = 10.0f;
+
+            inline constexpr float CUTOFF_FREQUENCY = 50.0f;
+
+            inline constexpr float LAG_FILTER_K = 0.05f;
         }
     }
 }

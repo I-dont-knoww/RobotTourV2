@@ -45,7 +45,7 @@ public:
     private:
         float getBias(uint currentPin);
         void setupRead(uint leftCurrentPin, uint rightCurrentPin);
-    
+
         uint16_t volatile m_rawData[2]{ 0u, 0u };
         Vec2 m_bias{};
     };

@@ -8,19 +8,25 @@
 
 #include <array>
 #include <cstddef>
+#include <optional>
 
 using uint = unsigned int;
 
 namespace Compiler {
     struct Command {
         Vec2 amount{};
+        std::optional<float> targetTime{};
         float units{};
+
         uint flags{};
         bool relative{};
     };
 
     struct Reverse {};
     struct Stop {};
+    struct Time {
+        float value{};
+    };
 
     struct Centimeters {};
 
@@ -32,14 +38,15 @@ namespace Compiler {
 
         inline constexpr Reverse REVERSE{};
         inline constexpr Stop STOP{};
+        constexpr Time TIME(float value) { return Time{ value }; }
 
         inline constexpr Centimeters CENTIMETERS{};
 
         constexpr Command moveby(Vec2 const& amount) {
-            return { amount, Track::SQUARE_SIZE, Path::NO_FLAGS, true };
+            return { amount, std::nullopt, Track::SQUARE_SIZE, Path::NO_FLAGS, true };
         }
         constexpr Command moveto(Vec2 const& amount) {
-            return { amount, Track::SQUARE_SIZE, Path::NO_FLAGS, false };
+            return { amount, std::nullopt, Track::SQUARE_SIZE, Path::NO_FLAGS, false };
         }
 
         constexpr Command operator&(Command const& command, Reverse) {
@@ -56,6 +63,12 @@ namespace Compiler {
         constexpr Command operator&(Command const& command, Centimeters) {
             Command newCommand = command;
             newCommand.units = 1.0f;
+            return newCommand;
+        }
+
+        constexpr Command operator&(Command const& command, Time time) {
+            Command newCommand = command;
+            newCommand.targetTime = time.value;
             return newCommand;
         }
     }
@@ -88,30 +101,43 @@ namespace Compiler {
     }
 
     template <size_t N>
-    constexpr std::array<float, N> getTargetTimes(std::array<Path, N> const& path,
+    constexpr std::array<float, N> getTargetTimes(std::array<Command, N> commands,
+                                                  std::array<Path, N> const& path,
                                                   float targetTime) {
-        float totalLength = path[0].position.length();
-        for (size_t i = 0; i < N - 1; ++i) {
-            Path const& segment = path[i];
-            Path const& nextSegment = path[i + 1];
+        float totalLength = 0.0f;
+        float adjustedTargetTime = targetTime;
+        Vec2 prevPosition{ 0.0f, 0.0f };
+        for (size_t i = 0; i < N; ++i) {
+            Vec2 const& currentPosition = path[i].position;
 
-            totalLength += (nextSegment.position - segment.position).length();
+            if (commands[i].targetTime.has_value())
+                adjustedTargetTime -= commands[i].targetTime.value();
+            else totalLength += (currentPosition - prevPosition).length();
+
+            prevPosition = currentPosition;
         }
+        assert(adjustedTargetTime < 0.0f);
 
-        std::array<float, N> targetTimes{ targetTime * path[0].position.length() / totalLength };
-        for (size_t i = 1; i < N; ++i) {
-            Path const& previousSegment = path[i - 1];
-            Path const& segment = path[i];
+        std::array<float, N> targetTimes{};
+        float accumulatedTime = 0.0f;
+        prevPosition = { 0.0f, 0.0f };
+        for (size_t i = 0; i < N; ++i) {
+            Vec2 const& currentPosition = path[i].position;
 
-            targetTimes[i] = targetTimes[i - 1] +
-                             targetTime * (segment.position - previousSegment.position).length() /
-                                 totalLength;
+            if (commands[i].targetTime.has_value()) targetTimes[i] = commands[i].targetTime.value();
+            else {
+                accumulatedTime += commands[i].targetTime.value_or(
+                    adjustedTargetTime * (currentPosition - prevPosition).length() / totalLength);
+                targetTimes[i] = accumulatedTime;
+            }
+
+            prevPosition = currentPosition;
         }
         return targetTimes;
     }
 
     template <size_t N>
     constexpr Vec2 getDestination(std::array<Path, N> const& path) {
-        return path[N - 1].position / Track::SQUARE_SIZE;
+        return path[N - 1].position;
     }
 }

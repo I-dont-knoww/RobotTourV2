@@ -3,6 +3,7 @@
 #include <cmath>
 #include <concepts>
 #include <limits>
+#include <utility>
 
 namespace VectorHelper {
     constexpr float sqrtNewtonRaphson(float x, float current, float previous) {
@@ -15,6 +16,11 @@ namespace VectorHelper {
             return sqrtNewtonRaphson(x, x, 0.0f);
     }
 }
+
+template <typename F, typename... Vectors>
+concept TransformFunction = requires(F f, Vectors... vectors) {
+    { f((vectors, std::declval<float>())...) } -> std::same_as<float>;
+};
 
 struct Vec2 {
     constexpr friend Vec2 operator+(Vec2 const& u, Vec2 const& v) {
@@ -61,18 +67,15 @@ struct Vec2 {
     }
 
     static constexpr float dot(Vec2 const& u, Vec2 const& v) { return u.x * v.x + u.y * v.y; }
+    static constexpr float cross(Vec2 const& u, Vec2 const& v) { return u.x * v.y - u.y * v.x; }
 
-    template <typename F>
-        requires requires(F f, float x) {
-            { f(x) } -> std::same_as<float>;
-        }
-    static constexpr Vec2 transform(Vec2 const& u, F const& function) {
-        return { function(u.x), function(u.y) };
+    template <typename F, std::same_as<Vec2>... Vectors>
+        requires TransformFunction<F, Vectors...>
+    static constexpr Vec2 transform(F const& function, Vectors const&... vectors) {
+        return { function(vectors.x...), function(vectors.y...) };
     }
     template <typename F>
-        requires requires(F f, float x) {
-            { f(x) } -> std::same_as<float>;
-        }
+        requires TransformFunction<F, Vec2>
     constexpr Vec2& transform(F const& function) {
         x = function(x);
         y = function(y);
@@ -159,17 +162,13 @@ struct Vec3 {
         return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
     }
 
-    template <typename F>
-        requires requires(F f, float x) {
-            { f(x) } -> std::same_as<float>;
-        }
-    static constexpr Vec3 transform(Vec3 const& u, F const& function) {
-        return { function(u.x), function(u.y), function(u.z) };
+    template <typename F, std::same_as<Vec3>... Vectors>
+        requires TransformFunction<F, Vectors...>
+    static constexpr Vec3 transform(F const& function, Vectors const&... vectors) {
+        return { function(vectors.x...), function(vectors.y...), function(vectors.z...) };
     }
     template <typename F>
-        requires requires(F f, float x) {
-            { f(x) } -> std::same_as<float>;
-        }
+        requires TransformFunction<F, Vec3>
     constexpr Vec3& transform(F const& function) {
         x = function(x);
         y = function(y);
