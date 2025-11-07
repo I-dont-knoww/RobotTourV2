@@ -5,9 +5,8 @@
 #include "kinematics/ForwardKinematics.hpp"
 
 #include "managers/ExitCondition.hpp"
-#include "managers/Heading.hpp"
-#include "managers/Linear.hpp"
 #include "managers/Rotation.hpp"
+#include "managers/Straight.hpp"
 
 #include "path/Path.hpp"
 
@@ -35,20 +34,17 @@ public:
     Vec2 update(ForwardKinematics::State const& state, float currentTime, float dt) {
         if (m_finished) return { 0.0f, 0.0f };
 
-        float linearSpeed = 0.0f;
-        float angle = 0.0f;
+        Vec2 targetSpeeds{ 0.0f, 0.0f };
 
-        if (m_mode == movement) {
-            linearSpeed = m_linearManager.update(state.position, state.velocity,
-                                                 state.angularVelocity, currentTime, dt);
-            angle = m_headingManager.update(state.position, state.velocity, Radians{ state.angle },
-                                            dt);
-        } else if (m_mode == rotation) angle = m_rotationManager.update(state.angle, dt);
+        if (m_mode == movement)
+            targetSpeeds = m_straightManager.update(state.position, state.velocity, state.angle,
+                                                    state.angularVelocity, currentTime, dt);
+        else if (m_mode == rotation) targetSpeeds.y = m_rotationManager.update(state.angle, dt);
 
         if (m_exitCondition.check(state.position, state.angle))
             m_finished = setupNextMode(state.position);
 
-        return { linearSpeed, angle };
+        return targetSpeeds;
     }
 
 private:
@@ -57,9 +53,11 @@ private:
         uint const flags = path.flags;
         float const targetTime = m_targetTimes[m_index];
 
-        m_linearManager.set(currentPosition, path.position, targetTime, flags & Path::REVERSE,
-                            flags & Path::STOP);
-        m_headingManager.set(currentPosition, path.position, flags & Path::REVERSE);
+        Vec2 const& previousPathPosition = (m_index == 0u) ? Vec2{ 0.0f, 0.0f }
+                                                           : m_path[m_index - 1u].position;
+
+        m_straightManager.set(previousPathPosition, path.position, targetTime,
+                              flags & Path::REVERSE, flags & Path::STOP);
 
         float distanceThreshold = Manager::Follower::TURNING_RADIUS;
 
@@ -106,8 +104,7 @@ private:
     std::array<Path, N> m_path{};
     std::array<float, N> m_targetTimes{};
 
-    Linear m_linearManager{};
-    Heading m_headingManager{};
+    Straight m_straightManager{};
     Rotation m_rotationManager{};
 
     ExitCondition m_exitCondition{};

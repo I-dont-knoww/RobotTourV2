@@ -33,8 +33,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <memory>
-#include <optional>
 
 static Atomic<ForwardKinematics::State> atomicForwardKinematicsState{};
 
@@ -85,24 +83,21 @@ void core0() {
     core0Status = RUNNING;
 
     auto core0Loop = [&]() {
-        // auto const state = atomicForwardKinematicsState.load();
+        auto const state = atomicForwardKinematicsState.load();
 
-        // time.update();
-        // Vec2 const targetParameters = follower.update(state, time.elapsed(),
-        //                                               Integration::SLOW_LOOP_DT);
+        time.update();
+        Vec2 const targetSpeeds = follower.update(state, time.elapsed(),
+                                                      Integration::SLOW_LOOP_DT);
 
-        // velocityRegulator.setTargets(targetParameters.x, targetParameters.y);
-        // Vec2 const targetVoltages = velocityRegulator.update(
-        //     state.velocity, state.angle, state.angularVelocity, battery.voltage(),
-        //     Integration::SLOW_LOOP_DT);
+        velocityRegulator.setTargets(targetSpeeds.x, targetSpeeds.y);
+        Vec2 const targetVoltages = velocityRegulator.update(
+            state.velocity, state.angle, state.angularVelocity, battery.voltage(),
+            Integration::SLOW_LOOP_DT);
 
-        // currentRegulator.setTargetVoltage(targetVoltages.x, targetVoltages.y);
-        // Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage(),
-        //                                                    Integration::SLOW_LOOP_DT);
-
-        // motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
-        motors.spin(static_cast<int>(-static_cast<float>(Drivers::Motors::MAX_POWER * 0.6f * 0.5f)),
-                    static_cast<int>(static_cast<float>(Drivers::Motors::MAX_POWER) * 0.6f * 1.15f));
+        currentRegulator.setTargetVoltage(targetVoltages);
+        Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage(),
+                                                           Integration::SLOW_LOOP_DT);
+        motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
 
         if (follower.finished()) {
             core0Status = FINISHED;
@@ -119,7 +114,7 @@ void core0() {
     irq_set_priority(hardware_alarm_get_irq_num(alarm_pool_hardware_alarm_num(core0AlarmPool)),
                      0b11110000);
 
-    repeating_timer_t timer;
+    repeating_timer_t timer{};
     alarm_pool_add_repeating_timer_us(core0AlarmPool, -Integration::SLOW_LOOP_US, thunk, &core0Loop,
                                       &timer);
 
@@ -131,7 +126,7 @@ void core0() {
     ledRGB.setRGB(Status::FINISHED);
 
     while (true) {
-        std::printf("Finished with position (%.5f, %.5f) and time %.5f\n", finalPosition.x,
+        std::printf("Finished with position (%.5f, %.5f) and time %.5f.\n", finalPosition.x,
                     finalPosition.y, finalTime);
         sleep_ms(1000);
     }
@@ -147,8 +142,9 @@ void core1() {
     while (core0Status < CALIBRATING) tight_loop_contents();
     core1Status = CALIBRATING;
 
-    ForwardKinematics forwardKinematics{ encoders.data() };
+    sleep_ms(static_cast<uint32_t>(Integration::CALIBRATION_DELAY * 1000.0f));
 
+    ForwardKinematics forwardKinematics{ encoders.data() };
     Gyroscope gyroscope{ pio0,
                          Pins::Gyroscope::CS,
                          Pins::Gyroscope::SCK,
@@ -177,7 +173,7 @@ void core1() {
     irq_set_priority(hardware_alarm_get_irq_num(alarm_pool_hardware_alarm_num(core1AlarmPool)),
                      0b11110000);
 
-    repeating_timer_t timer;
+    repeating_timer_t timer{};
     alarm_pool_add_repeating_timer_us(core1AlarmPool, -Integration::FAST_LOOP_US, thunk, &core1Loop,
                                       &timer);
 

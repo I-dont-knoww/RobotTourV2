@@ -68,6 +68,8 @@ namespace Integration {
     inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
     // inline constexpr float SLOW_LOOP_HZ = 200.0f;
 
+    inline constexpr float CALIBRATION_DELAY = 5.0f;
+
     inline constexpr float FAST_LOOP_DT = 1.0f / FAST_LOOP_HZ;
     inline constexpr float SLOW_LOOP_DT = 1.0f / SLOW_LOOP_HZ;
 
@@ -90,9 +92,28 @@ namespace Manager {
     namespace Follower {
         inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
         inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
-        inline constexpr float TURNING_RADIUS = 5.0f;
+        inline constexpr float TURNING_RADIUS = 10.0f;
 
         inline constexpr float ANGLE_THRESHOLD = 0.05f;
+    }
+
+    namespace Straight {
+        // inline constexpr float slowdownKp = 0.05f;
+        inline constexpr float slowdownKp = 4.0f;
+        inline constexpr float slowdownKs = 15.0f;
+
+        inline constexpr float angularKp = 10.0f;
+        inline constexpr float angularKd = 0.1f;
+
+        inline constexpr float linearKp = 2.0f;
+        inline constexpr float linearKd = 0.1f;
+
+        inline constexpr float FILTER_ALPHA = 1.0f;
+
+        inline constexpr float TURN_ANGULAR_SPEED = 4.0f;
+        inline constexpr float TURN_LINEAR_FACTOR = 7.0f;
+        inline constexpr float PREDICTED_TURN_LINEAR_SPEED =
+            TURN_LINEAR_FACTOR * Follower::TURNING_RADIUS / TURN_ANGULAR_SPEED;
     }
 
     namespace Heading {
@@ -124,7 +145,7 @@ namespace Manager {
 
         inline constexpr float MAX_SPEED = 500.0f;
         inline constexpr float MAX_CENTRIPETAL = 50.0f;
-        
+
         inline constexpr float GIVE_UP_TIME = 0.1f;
     }
 }
@@ -175,7 +196,7 @@ namespace Pins {
 
 namespace Regulators {
     namespace Current {
-        inline constexpr float MAX_CURRENT = 0.4f;
+        inline constexpr float MAX_CURRENT = 0.40f;
 
         inline constexpr Vec2 RESISTANCE{ 3.30982f, 3.33778f };
         inline constexpr Vec2 FREE_ANGULAR_VEL{ 91.0553f, 90.0371f };

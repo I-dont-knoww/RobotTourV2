@@ -21,10 +21,7 @@ public:
 
     Vec2 update(Vec2 const& wheelSpeeds, float batteryVoltage, float dt);
 
-    void setTargetVoltage(float voltage) { setTargetVoltage(voltage, voltage); }
-    void setTargetVoltage(float targetLeftVoltage, float targetRightVoltage) {
-        m_targetVoltages = { targetLeftVoltage, targetRightVoltage };
-    }
+    void setTargetVoltage(Vec2 const& targetVoltages) { m_targetVoltages = targetVoltages; }
 
 private:
     Vec2 m_targetVoltages{ 0.0f, 0.0f };

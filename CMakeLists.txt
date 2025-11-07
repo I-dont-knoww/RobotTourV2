@@ -56,8 +56,7 @@ add_executable(
     src/kinematics/InverseKinematics.cpp
 
     src/managers/ExitCondition.cpp
-    src/managers/Heading.cpp
-    src/managers/Linear.cpp
+    src/managers/Straight.cpp
     src/managers/Rotation.cpp
 
     src/regulators/CurrentRegulator.cpp
