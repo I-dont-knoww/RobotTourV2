@@ -37,7 +37,7 @@ public:
         Vec2 targetSpeeds{ 0.0f, 0.0f };
 
         if (m_mode == movement)
-            targetSpeeds = m_straightManager.update(state.position, state.velocity, state.angle,
+            targetSpeeds = m_straightManager.update(state.position, state.angle,
                                                     state.angularVelocity, currentTime, dt);
         else if (m_mode == rotation) targetSpeeds.y = m_rotationManager.update(state.angle, dt);
 
@@ -55,8 +55,19 @@ private:
 
         Vec2 const& previousPathPosition = (m_index == 0u) ? Vec2{ 0.0f, 0.0f }
                                                            : m_path[m_index - 1u].position;
+        float turnAngle{};
+        if (m_index == m_path.size() - 1u) turnAngle = 0.0f;
+        else {
+            Vec2 const& nextPathPosition = m_path[m_index + 1u].position;
 
-        m_straightManager.set(previousPathPosition, path.position, targetTime,
+            Vec2 const currentDirection = path.position - previousPathPosition;
+            Vec2 const previousDirection = nextPathPosition - path.position;
+            
+            turnAngle = std::acosf(Vec2::dot(currentDirection, previousDirection) /
+                                   (currentDirection.length() * previousDirection.length()));
+        }
+
+        m_straightManager.set(previousPathPosition, path.position, targetTime, turnAngle,
                               flags & Path::REVERSE, flags & Path::STOP);
 
         float distanceThreshold = Manager::Follower::TURNING_RADIUS;

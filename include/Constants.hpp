@@ -92,61 +92,34 @@ namespace Manager {
     namespace Follower {
         inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
         inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
-        inline constexpr float TURNING_RADIUS = 10.0f;
+        inline constexpr float TURNING_RADIUS = 20.0f;
 
         inline constexpr float ANGLE_THRESHOLD = 0.05f;
     }
 
     namespace Straight {
-        // inline constexpr float slowdownKp = 0.05f;
         inline constexpr float slowdownKp = 4.0f;
         inline constexpr float slowdownKs = 15.0f;
 
-        inline constexpr float angularKp = 10.0f;
-        inline constexpr float angularKd = 0.1f;
+        inline constexpr float angularKp = 20.0f;
+        inline constexpr float angularKd = 0.2f;
 
         inline constexpr float linearKp = 2.0f;
         inline constexpr float linearKd = 0.1f;
+        inline constexpr float MAX_LINEAR_TURN_SPEED = 32.0f;
 
         inline constexpr float FILTER_ALPHA = 1.0f;
 
-        inline constexpr float TURN_ANGULAR_SPEED = 4.0f;
-        inline constexpr float TURN_LINEAR_FACTOR = 7.0f;
-        inline constexpr float PREDICTED_TURN_LINEAR_SPEED =
-            TURN_LINEAR_FACTOR * Follower::TURNING_RADIUS / TURN_ANGULAR_SPEED;
-    }
-
-    namespace Heading {
-        inline constexpr float angularKp = 2.0f;
-        inline constexpr float angularKd = 0.0f;
-        inline constexpr float angularAlpha = 1.0f;
-
-        inline constexpr float lateralScale = 5.0f;
-        inline constexpr float lateralK = 1.0f;
-
-        inline constexpr float MAX_SPEED = 4.0f;
-    }
-
-    namespace Position {
-        inline constexpr float kP = 2.0f;
-        inline constexpr float kS = -5.0f;
+        inline constexpr float TURN_ANGULAR_SPEED = 3.5f;
+        inline constexpr float DEFAULT_SPEED = 500.0f;
+        inline constexpr float TURN_LINEAR_FACTOR = 6.0f;
     }
 
     namespace Rotation {
         inline constexpr float kS = 2.0f;
-        inline constexpr float kP = 4.0f;
+        inline constexpr float kP = 3.5f;
 
-        inline constexpr float MAX_SPEED = 5.0f;
-    }
-
-    namespace Speed {
-        inline constexpr float kP = 0.3f;
-        inline constexpr float kD = 0.4f;
-
-        inline constexpr float MAX_SPEED = 500.0f;
-        inline constexpr float MAX_CENTRIPETAL = 50.0f;
-
-        inline constexpr float GIVE_UP_TIME = 0.1f;
+        inline constexpr float MAX_SPEED = 2.0f;
     }
 }
 

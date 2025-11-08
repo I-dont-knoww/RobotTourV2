@@ -8,8 +8,6 @@
 #include <cmath>
 #include <optional>
 
-#include <cstdio>
-
 float getHeadingError(Radians targetAngle, Radians currentAngle, bool reverse) {
     Radians headingError = currentAngle - targetAngle;
     if (reverse) return headingError + Radians{ Constants::PI };
@@ -27,20 +25,23 @@ float getLinearError(Vec2 const& startPosition, Vec2 const& targetPosition,
 }
 
 float getAngularSpeed(float headingErrorSpeed, float linearErrorSpeed, bool reverse) {
-    return linearErrorSpeed + headingErrorSpeed;
+    using Manager::Straight::MAX_LINEAR_TURN_SPEED;
+    return std::clamp(linearErrorSpeed, -MAX_LINEAR_TURN_SPEED, MAX_LINEAR_TURN_SPEED) +
+           headingErrorSpeed;
 }
 
 float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosition) {
     return (targetPosition - currentPosition).length();
 }
 
-float getSlowdownSpeed(float distanceLeft, Vec2 const& currentVelocity, float finalSpeed) {
+float getSlowdownSpeed(float distanceLeft, std::optional<float> finalSpeed) {
+    using Manager::Straight::DEFAULT_SPEED;
     using Manager::Straight::slowdownKp;
     using Manager::Straight::slowdownKs;
 
-    float const currentSpeed = currentVelocity.length();
-    float const targetSpeed = slowdownKp * (distanceLeft + finalSpeed) + slowdownKs;
+    if (!finalSpeed.has_value()) return DEFAULT_SPEED;
 
+    float const targetSpeed = slowdownKp * (distanceLeft + *finalSpeed) + slowdownKs;
     return targetSpeed;
 }
 
@@ -73,8 +74,28 @@ Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
     return { linearSpeed, angularSpeed };
 }
 
-Vec2 Straight::update(Vec2 const& currentPosition, Vec2 const& currentVelocity,
-                      Radians currentAngle, float angularVelocity, float currentTime, float dt) {
+void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
+                   float turnAngle, bool reverse, bool stop) {
+    using Manager::Straight::TURN_ANGULAR_SPEED;
+    using Manager::Straight::TURN_LINEAR_FACTOR;
+
+    m_startPosition = startPosition;
+    m_targetPosition = targetPosition;
+    m_targetAngle = (targetPosition - startPosition).angle();
+    m_targetTime = targetTime;
+
+    if (stop) m_finalSpeed = 0.0f;
+    else if (turnAngle == 0.0f) m_finalSpeed = std::nullopt;
+    else {
+        float const turnRadius = std::tanf((Constants::PI - turnAngle) / 2.0f);
+        m_finalSpeed = TURN_LINEAR_FACTOR * std::fabsf(turnRadius / TURN_ANGULAR_SPEED);
+    }
+
+    m_reverse = reverse;
+}
+
+Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
+                      float currentTime, float dt) {
     float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
     float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
     float const headingErrorSpeed = m_headingController.update(0.0f, headingError, dt);
@@ -82,7 +103,7 @@ Vec2 Straight::update(Vec2 const& currentPosition, Vec2 const& currentVelocity,
     float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, m_reverse);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
-    float const slowdownSpeed = getSlowdownSpeed(distanceLeft, currentVelocity, m_finalSpeed);
+    float const slowdownSpeed = getSlowdownSpeed(distanceLeft, m_finalSpeed);
     auto const targetSpeed = getTargetSpeed(distanceLeft, m_targetTime, currentTime);
     float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
 

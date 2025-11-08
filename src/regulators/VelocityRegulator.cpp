@@ -42,12 +42,5 @@ Vec2 VelocityRegulator::update(Vec2 const& currentVelocity, Radians currentAngle
         rightOffsetVoltage *= batteryVoltage / largerOffsetVoltage;
     }
 
-    // std::printf(">currentLinearVelocity:%.5f\n>targetLinearVelocity:%.5f\n>linearOutput:%.5f\n",
-    //             currentLinearVelocity, filteredTargetLinearVelocity, linearVelocityVoltage);
-    // std::printf(">currentAngularVelocity:%.5f\n>targetAngularVelocity:%.5f\n>angularOutput:%.5f\n",
-    //             currentAngularVelocity, filteredTargetAngularVelocity,
-    //             angularVelocityControlVoltage);
-    // std::printf(">leftVoltage:%.5f\n>rightVoltage:%.5f\n", leftVoltage, rightVoltage);
-
     return { leftOffsetVoltage, rightOffsetVoltage };
 }

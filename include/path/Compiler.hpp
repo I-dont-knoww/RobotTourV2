@@ -29,6 +29,7 @@ namespace Compiler {
     };
 
     struct Centimeters {};
+    struct Meters {};
 
     namespace Tokens {
         inline constexpr Vec2 UP{ 0.0f, 1.0f };
@@ -41,6 +42,7 @@ namespace Compiler {
         constexpr Time TIME(float value) { return Time{ value }; }
 
         inline constexpr Centimeters CENTIMETERS{};
+        inline constexpr Meters METERS{};
 
         constexpr Command moveby(Vec2 const& amount) {
             return { amount, std::nullopt, Track::SQUARE_SIZE, Path::NO_FLAGS, true };
@@ -63,6 +65,11 @@ namespace Compiler {
         constexpr Command operator&(Command const& command, Centimeters) {
             Command newCommand = command;
             newCommand.units = 1.0f;
+            return newCommand;
+        }
+        constexpr Command operator&(Command const& command, Meters) {
+            Command newCommand = command;
+            newCommand.units = 100.0f;
             return newCommand;
         }
 
@@ -91,7 +98,7 @@ namespace Compiler {
                 segment.flags |= Path::STOP;
                 segment.flags |= Path::ACCURATE;
             } else if (Vec2::dot(command.amount, nextCommand.amount) < 0.0f ||
-                       command.flags & Path::REVERSE != command.flags & Path::REVERSE)
+                       command.flags & Path::REVERSE != nextCommand.flags & Path::REVERSE)
                 segment.flags |= Path::STOP;
 
             path[i] = segment;
