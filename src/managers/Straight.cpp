@@ -66,9 +66,8 @@ Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
     angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
 
     if (angularSpeed != 0.0f) {
-        float const MAX_LINEAR_SPEED = TURN_LINEAR_FACTOR *
-                                       std::fabsf(TURNING_RADIUS / angularSpeed);
-        linearSpeed = std::clamp(linearSpeed, -MAX_LINEAR_SPEED, MAX_LINEAR_SPEED);
+        float const maxLinearSpeed = TURN_LINEAR_FACTOR * std::fabsf(TURNING_RADIUS / angularSpeed);
+        linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
     }
 
     return { linearSpeed, angularSpeed };

@@ -35,8 +35,6 @@ private:
     RCFilter m_velocityXFilter{ Kinematics::Forward::RC_FILTER_CUTOFF_FREQUENCY };
     RCFilter m_velocityYFilter{ Kinematics::Forward::RC_FILTER_CUTOFF_FREQUENCY };
 
-    // LagFilter m_leftWheelSpeedFilter{ 0.05f };
-    // LagFilter m_rightWheelSpeedFilter{ 0.05f };
     RCFilter m_leftWheelSpeedFilter{ 100.0f };
     RCFilter m_rightWheelSpeedFilter{ 100.0f };
 

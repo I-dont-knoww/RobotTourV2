@@ -15,6 +15,7 @@ using uint = unsigned int;
 namespace Compiler {
     struct Command {
         Vec2 amount{};
+        Vec2 offset{};
         std::optional<float> targetTime{};
         float units{};
 
@@ -31,7 +32,19 @@ namespace Compiler {
     struct Centimeters {};
     struct Meters {};
 
+    struct OffsetOnce {
+        Vec2 amount{};
+    };
+    struct OffsetAll {
+        Vec2 amount{};
+    };
+
+    struct LastMove {};
+
     namespace Tokens {
+        using Chassis::DOWEL_DISTANCE;
+        using Track::SQUARE_SIZE;
+
         inline constexpr Vec2 UP{ 0.0f, 1.0f };
         inline constexpr Vec2 DOWN{ 0.0f, -1.0f };
         inline constexpr Vec2 LEFT{ -1.0f, 0.0f };
@@ -39,16 +52,21 @@ namespace Compiler {
 
         inline constexpr Reverse REVERSE{};
         inline constexpr Stop STOP{};
-        constexpr Time TIME(float value) { return Time{ value }; }
+        constexpr Time TIME(float value) { return { value }; }
 
         inline constexpr Centimeters CENTIMETERS{};
         inline constexpr Meters METERS{};
 
+        constexpr OffsetOnce OFFSET_ONCE(Vec2 const& value) { return { value }; }
+        constexpr OffsetAll OFFSET_ALL(Vec2 const& value) { return { value }; }
+
+        inline constexpr LastMove LAST_MOVE{};
+
         constexpr Command moveby(Vec2 const& amount) {
-            return { amount, std::nullopt, Track::SQUARE_SIZE, Path::NO_FLAGS, true };
+            return { amount, { 0.0f, 0.0f }, std::nullopt, SQUARE_SIZE, Path::NO_FLAGS, true };
         }
         constexpr Command moveto(Vec2 const& amount) {
-            return { amount, std::nullopt, Track::SQUARE_SIZE, Path::NO_FLAGS, false };
+            return { amount, { 0.0f, 0.0f }, std::nullopt, SQUARE_SIZE, Path::NO_FLAGS, false };
         }
 
         constexpr Command operator&(Command const& command, Reverse) {
@@ -78,6 +96,29 @@ namespace Compiler {
             newCommand.targetTime = time.value;
             return newCommand;
         }
+
+        constexpr Command operator&(Command const& command, OffsetOnce offset) {
+            Command newCommand = command;
+            newCommand.offset += offset.amount;
+            return newCommand;
+        }
+        constexpr Command operator&(Command const& command, OffsetAll offset) {
+            Command newCommand = command;
+            newCommand.amount += offset.amount;
+            return newCommand;
+        }
+
+        inline constexpr Command FIRST_MOVE = moveby((SQUARE_SIZE / 2.0f - DOWEL_DISTANCE) * UP) &
+                                              CENTIMETERS;
+        constexpr Command operator&(Command const& command, LastMove) {
+            Command newCommand = command;
+
+            float length = command.amount.length() * newCommand.units;
+            float const scale = (length + DOWEL_DISTANCE) / length;
+
+            newCommand.amount *= scale;
+            return newCommand;
+        }
     }
 
     template <size_t N>
@@ -102,6 +143,13 @@ namespace Compiler {
                 segment.flags |= Path::STOP;
 
             path[i] = segment;
+        }
+
+        for (size_t i = 0; i < commands.size(); ++i) {
+            Command const& command = commands[i];
+            Path& pathSegment = path[i];
+
+            pathSegment.position += command.offset;
         }
 
         return path;
