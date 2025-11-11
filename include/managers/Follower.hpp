@@ -24,7 +24,7 @@ using uint = unsigned int;
 template <size_t N>
 class Follower {
 public:
-    Follower(std::array<Path, N> path, std::array<float, N> targetTimes)
+    Follower(std::array<Path, N> const& path, std::array<float, N> const& targetTimes)
         : m_path{ path }, m_targetTimes{ targetTimes } {
         setupNextMode({ 0.0f, 0.0f });
     }
@@ -32,19 +32,15 @@ public:
     bool finished() { return m_finished; }
 
     Vec2 update(ForwardKinematics::State const& state, float currentTime, float dt) {
-        if (m_finished) return { 0.0f, 0.0f };
-
-        Vec2 targetSpeeds{ 0.0f, 0.0f };
-
-        if (m_mode == movement)
-            targetSpeeds = m_straightManager.update(state.position, state.angle,
-                                                    state.angularVelocity, currentTime, dt);
-        else if (m_mode == rotation) targetSpeeds.y = m_rotationManager.update(state.angle, dt);
-
         if (m_exitCondition.check(state.position, state.angle))
             m_finished = setupNextMode(state.position);
+        if (m_finished) return { 0.0f, 0.0f };
 
-        return targetSpeeds;
+        if (m_mode == movement)
+            return m_straightManager.update(state.position, state.angle, state.angularVelocity,
+                                            currentTime, dt);
+        else if (m_mode == rotation) return { 0.0f, m_rotationManager.update(state.angle, dt) };
+        else return { 0.0f, 0.0f };
     }
 
 private:
@@ -62,7 +58,7 @@ private:
 
             Vec2 const currentDirection = path.position - previousPathPosition;
             Vec2 const previousDirection = nextPathPosition - path.position;
-            
+
             turnAngle = std::acosf(Vec2::dot(currentDirection, previousDirection) /
                                    (currentDirection.length() * previousDirection.length()));
         }

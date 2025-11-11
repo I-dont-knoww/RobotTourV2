@@ -86,8 +86,7 @@ void core0() {
         auto const state = atomicForwardKinematicsState.load();
 
         time.update();
-        Vec2 const targetSpeeds = follower.update(state, time.elapsed(),
-                                                      Integration::SLOW_LOOP_DT);
+        Vec2 const targetSpeeds = follower.update(state, time.elapsed(), Integration::SLOW_LOOP_DT);
 
         velocityRegulator.setTargets(targetSpeeds.x, targetSpeeds.y);
         Vec2 const targetVoltages = velocityRegulator.update(
@@ -135,7 +134,6 @@ void core0() {
 void core1() {
     Encoders encoders{ pio0, Pins::Encoders::CS_LEFT, Pins::Encoders::CS_RIGHT, Pins::Encoders::SCK,
                        Pins::Encoders::MISO };
-
     Fusion fusion{};
 
     core1Status = INITIALIZED;

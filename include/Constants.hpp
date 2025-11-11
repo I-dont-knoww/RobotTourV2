@@ -66,7 +66,6 @@ namespace Drivers {
 namespace Integration {
     inline constexpr float FAST_LOOP_HZ = 32.0e3f;
     inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
-    // inline constexpr float SLOW_LOOP_HZ = 200.0f;
 
     inline constexpr float CALIBRATION_DELAY = 5.0f;
 
@@ -98,15 +97,15 @@ namespace Manager {
     }
 
     namespace Straight {
-        inline constexpr float slowdownKp = 4.0f;
-        inline constexpr float slowdownKs = 15.0f;
+        inline constexpr float slowdownKp = 3.0f;
+        inline constexpr float slowdownKs = 12.0f;
 
         inline constexpr float angularKp = 20.0f;
         inline constexpr float angularKd = 0.2f;
 
         inline constexpr float linearKp = 2.0f;
         inline constexpr float linearKd = 0.1f;
-        inline constexpr float MAX_LINEAR_TURN_SPEED = 32.0f;
+        inline constexpr float LINEAR_AUTHORITY = 0.3f;
 
         inline constexpr float FILTER_ALPHA = 1.0f;
 

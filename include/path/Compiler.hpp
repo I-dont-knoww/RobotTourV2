@@ -108,13 +108,13 @@ namespace Compiler {
             return newCommand;
         }
 
-        inline constexpr Command FIRST_MOVE = moveby((SQUARE_SIZE / 2.0f - DOWEL_DISTANCE) * UP) &
+        inline constexpr Command FIRST_MOVE = moveby((SQUARE_SIZE / 2.0f + DOWEL_DISTANCE) * UP) &
                                               CENTIMETERS;
         constexpr Command operator&(Command const& command, LastMove) {
             Command newCommand = command;
 
             float length = command.amount.length() * newCommand.units;
-            float const scale = (length + DOWEL_DISTANCE) / length;
+            float const scale = (length - DOWEL_DISTANCE) / length;
 
             newCommand.amount *= scale;
             return newCommand;

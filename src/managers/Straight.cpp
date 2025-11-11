@@ -25,8 +25,10 @@ float getLinearError(Vec2 const& startPosition, Vec2 const& targetPosition,
 }
 
 float getAngularSpeed(float headingErrorSpeed, float linearErrorSpeed, bool reverse) {
-    using Manager::Straight::MAX_LINEAR_TURN_SPEED;
-    return std::clamp(linearErrorSpeed, -MAX_LINEAR_TURN_SPEED, MAX_LINEAR_TURN_SPEED) +
+    using Manager::Straight::LINEAR_AUTHORITY;
+
+    float headingErrorSpeedMagnitude = std::fabsf(headingErrorSpeed) + LINEAR_AUTHORITY;
+    return std::clamp(linearErrorSpeed, -headingErrorSpeedMagnitude, headingErrorSpeedMagnitude) +
            headingErrorSpeed;
 }
 

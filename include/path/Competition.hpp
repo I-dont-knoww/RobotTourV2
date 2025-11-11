@@ -10,23 +10,28 @@
 namespace Competition {
     using namespace Compiler::Tokens;
 
-    // fix fucking super speed turns and also at low speeds it lowk does the weird thing at the end
-    // where it feels like the controller goes insane
-
-    inline constexpr float TARGET_TIME = 0.0f;
+    inline constexpr float TARGET_TIME = 50.0f;
     inline constexpr auto COMMANDS = std::to_array<Compiler::Command>({
         // clang-format off
 
-        // moveby(UP) & METERS,
-        // moveby(3.0f * UP + LEFT) & METERS,
-        // moveby(2.0f * UP) & METERS,
-        // moveby(3.0f * UP + RIGHT) & METERS,
-        // moveby(UP) & METERS,
+        FIRST_MOVE,
 
+        moveby(UP + LEFT),
         moveby(UP),
-        moveby(RIGHT) & OFFSET_ALL(UP),
+        moveby(RIGHT),
+        moveby(UP),
+        moveby(LEFT),
+        moveby(UP),
+        moveby(RIGHT),
+        moveby(RIGHT),
+        moveby(RIGHT),
         moveby(DOWN),
         moveby(LEFT),
+        moveby(DOWN),
+        moveby(RIGHT),
+        moveby(DOWN),
+
+        moveby(LEFT + DOWN) & LAST_MOVE & OFFSET_ONCE(1.5f * LEFT + 0.75f * DOWN),
 
         // clang-format on
     });
