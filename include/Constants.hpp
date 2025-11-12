@@ -68,6 +68,7 @@ namespace Integration {
     inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
 
     inline constexpr float CALIBRATION_DELAY = 5.0f;
+    inline constexpr float FINAL_STATE_MEASUREMENT_DELAY = 1.0f;
 
     inline constexpr float FAST_LOOP_DT = 1.0f / FAST_LOOP_HZ;
     inline constexpr float SLOW_LOOP_DT = 1.0f / SLOW_LOOP_HZ;

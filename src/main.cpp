@@ -118,11 +118,13 @@ void core0() {
                                       &timer);
 
     while (core0Status < FINISHED) tight_loop_contents();
-    Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
-    float const finalTime = time.elapsed();
 
     motors.spin(0.0f);
+    sleep_ms(static_cast<uint32_t>(Integration::FINAL_STATE_MEASUREMENT_DELAY * 1000.0f));
+    
     ledRGB.setRGB(Status::FINISHED);
+    Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
+    float const finalTime = time.elapsed();
 
     while (true) {
         std::printf("Finished with position (%.5f, %.5f) and time %.5f.\n", finalPosition.x,
