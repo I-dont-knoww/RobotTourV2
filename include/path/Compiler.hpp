@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <numeric>
 #include <optional>
+#include <tuple>
 
 using uint = unsigned int;
 
@@ -185,18 +186,18 @@ namespace Compiler {
         for (size_t i = 1; i < N; ++i) {
             Vec2 const& thirdPosition = path[i].position;
 
-            if (!(path[i].flags & Path::STOP)) continue;
-            if (!(path[i - 1].flags & Path::STOP)) continue;
+            if (path[i - 1].flags & Path::STOP) {
+                Radians angle1{ (thirdPosition - secondPosition).angle() };
+                Radians angle2{ (secondPosition - firstPosition).angle() };
 
-            Radians angle1{ (thirdPosition - secondPosition).angle() };
-            Radians angle2{ (secondPosition - firstPosition).angle() };
+                if (path[i].flags & Path::REVERSE) angle1 += Constants::PI;
+                if (path[i - 1].flags & Path::REVERSE) angle2 += Constants::PI;
 
-            if (path[i].flags & Path::REVERSE) angle1 += Constants::PI;
-            if (path[i - 1].flags & Path::REVERSE) angle2 += Constants::PI;
+                float angle = angle1 - angle2;
+                if (angle < 0.0f) angle = -angle;
 
-            float angle = angle1 - angle2;
-            if (angle < 0.0f) angle = -angle;
-            turnTimes[i] = angle / MAX_SPEED + TURN_TIME_OFFSET;
+                if (angle > 1.0e-6f) turnTimes[i] = angle / MAX_SPEED + TURN_TIME_OFFSET;
+            }
 
             firstPosition = secondPosition;
             secondPosition = thirdPosition;
@@ -217,8 +218,8 @@ namespace Compiler {
 
     template <size_t N>
     constexpr std::array<float, N> getTargetTimes(std::array<Command, N> const& commands,
-                                                             std::array<Path, N> const& path,
-                                                             float targetTime) {
+                                                  std::array<Path, N> const& path,
+                                                  float targetTime) {
         float effectiveLength = getEffectiveLength(commands, path);
 
         std::array<float, N> turnTimes = getTurnTimes(path);
@@ -241,43 +242,6 @@ namespace Compiler {
         }
         return targetTimes;
     }
-
-    // template <size_t N>
-    // constexpr std::array<float, N> getTargetTimes(std::array<Command, N> const& commands,
-    //                                               std::array<Path, N> const& path,
-    //                                               float targetTime) {
-    //     float totalLength = 0.0f;
-    //     float adjustedTargetTime = targetTime;
-    //     Vec2 prevPosition{ 0.0f, 0.0f };
-    //     for (size_t i = 0; i < N; ++i) {
-    //         Vec2 const& currentPosition = path[i].position;
-
-    //         if (commands[i].targetTime.has_value())
-    //             adjustedTargetTime -= commands[i].targetTime.value();
-    //         else totalLength += (currentPosition - prevPosition).length();
-
-    //         prevPosition = currentPosition;
-    //     }
-    //     assert(adjustedTargetTime < 0.0f);
-
-    //     std::array<float, N> targetTimes{};
-    //     float accumulatedTime = 0.0f;
-    //     prevPosition = { 0.0f, 0.0f };
-    //     for (size_t i = 0; i < N; ++i) {
-    //         Vec2 const& currentPosition = path[i].position;
-
-    //         if (commands[i].targetTime.has_value()) targetTimes[i] =
-    //         commands[i].targetTime.value(); else {
-    //             accumulatedTime += commands[i].targetTime.value_or(
-    //                 adjustedTargetTime * (currentPosition - prevPosition).length() /
-    //                 totalLength);
-    //             targetTimes[i] = accumulatedTime;
-    //         }
-
-    //         prevPosition = currentPosition;
-    //     }
-    //     return targetTimes;
-    // }
 
     template <size_t N>
     constexpr Vec2 getDestination(std::array<Path, N> const& path) {
