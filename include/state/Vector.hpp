@@ -1,8 +1,11 @@
+// https://www.elbeno.com/blog/?p=1211
+
 #pragma once
 
 #include <cmath>
 #include <concepts>
 #include <limits>
+#include <numbers>
 #include <utility>
 
 namespace VectorHelper {
@@ -14,6 +17,34 @@ namespace VectorHelper {
     constexpr float constexprSqrt(float x) {
         if (x >= 0.0f && x < std::numeric_limits<float>::infinity())
             return sqrtNewtonRaphson(x, x, 0.0f);
+    }
+
+    namespace Atan {
+        constexpr float term(float x, int k) {
+            return (2.0f * static_cast<float>(k) * x) /
+                   ((2.0f * static_cast<float>(k) + 1.0f) * (1.0f + x));
+        }
+
+        constexpr float product(float x, int k) {
+            return k == 1 ? term(x * x, k) : term(x * x, k) * product(x, k - 1);
+        }
+
+        constexpr float sum(float x, float currentSum, int n) {
+            return currentSum + product(x, n) == currentSum
+                       ? currentSum
+                       : sum(x, currentSum + product(x, n), n + 1);
+        }
+    }
+
+    constexpr float constexprAtan(float x) { return x / (1.0f + x * x) * Atan::sum(x, 1.0f, 1); }
+
+    constexpr float constexprAtan2(float y, float x) {
+        if (x > 0.0f) return constexprAtan(y / x);
+        if (x < 0.0f && y >= 0.0f) return constexprAtan(y / x) + std::numbers::pi_v<float>;
+        if (x < 0.0f && y < 0.0f) return constexprAtan(y / x) - std::numbers::pi_v<float>;
+        if (x == 0.0f && y > 0.0f) return std::numbers::pi_v<float> / 2.0f;
+        if (x == 0.0f && y < 0.0f) return -std::numbers::pi_v<float> / 2.0f;
+        return 0.0f;
     }
 }
 
@@ -90,7 +121,13 @@ struct Vec2 {
             return std::sqrtf(lengthSquared());
         }
     }
-    float angle() const { return std::atan2f(y, x); };
+    constexpr float angle() const {
+        if consteval {
+            return VectorHelper::constexprAtan2(y, x);
+        } else {
+            return std::atan2f(y, x);
+        }
+    }
 
     static Vec2 fromPolar(float length, float angle) {
         return { length * std::cosf(angle), length * std::sinf(angle) };
