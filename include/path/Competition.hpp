@@ -16,32 +16,34 @@ namespace Competition {
 
         FIRST_MOVE,
 
+        moveby(LEFT),
+        moveby(UP),
         moveby(UP),
         moveby(RIGHT),
-        moveby(UP),
-        moveby(0.7f * UP),
-        moveby(0.7f * DOWN) & REVERSE,
-        moveby(DOWN),
-        moveby(LEFT),
-        moveby(LEFT),
         moveby(RIGHT),
-        moveby(0.7f * UP),
-        moveby(0.7f * DOWN) & REVERSE,
-        moveby(DOWN),
-        moveby(LEFT),
-        moveby(LEFT),
+        moveby(RIGHT),
         moveby(UP),
-        moveby(LEFT),
+        moveby(0.7f * RIGHT),
+        moveby(0.7f * LEFT) & REVERSE,
+        moveby(DOWN),
+        moveby(DOWN),
+        moveby(RIGHT),
         moveby(0.7f * DOWN),
         moveby(0.7f * UP) & REVERSE,
+        moveby(LEFT),
         moveby(UP),
+        moveby(LEFT),
+        moveby(LEFT),
         moveby(UP),
-        moveby(RIGHT),
+        moveby(0.7f * RIGHT),
+        moveby(0.7f * LEFT) & REVERSE,
 
-        moveby(DOWN) & LAST_MOVE
+        moveby(LEFT) & LAST_MOVE & OFFSET_ONCE(6.15f * UP + 5.0f * RIGHT)
 
         // clang-format on
     });
+
+    // 8.3cm
 
     inline constexpr auto PATH = Compiler::compile(COMMANDS);
     inline constexpr auto TARGET_TIMES = Compiler::getTargetTimes(COMMANDS, PATH, TARGET_TIME);
