@@ -64,17 +64,20 @@ namespace Drivers {
 }
 
 namespace Integration {
-    inline constexpr float FAST_LOOP_HZ = 32.0e3f;
-    inline constexpr float SLOW_LOOP_HZ = 10.0e3f;
+    inline constexpr float TARGET_FAST_LOOP_HZ = 32.0e3f;
+    inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
 
     inline constexpr float CALIBRATION_DELAY = 1.0f;
     inline constexpr float FINAL_STATE_MEASUREMENT_DELAY = 1.0f;
 
-    inline constexpr float FAST_LOOP_DT = 1.0f / FAST_LOOP_HZ;
-    inline constexpr float SLOW_LOOP_DT = 1.0f / SLOW_LOOP_HZ;
+    inline constexpr float TARGET_FAST_LOOP_DT = 1.0f / TARGET_FAST_LOOP_HZ;
+    inline constexpr float TARGET_SLOW_LOOP_DT = 1.0f / TARGET_SLOW_LOOP_HZ;
 
-    inline constexpr int64_t FAST_LOOP_US = static_cast<uint64_t>(FAST_LOOP_DT * 1.0e6f);
-    inline constexpr int64_t SLOW_LOOP_US = static_cast<uint64_t>(SLOW_LOOP_DT * 1.0e6f);
+    inline constexpr int64_t FAST_LOOP_US = static_cast<uint64_t>(TARGET_FAST_LOOP_DT * 1.0e6f);
+    inline constexpr int64_t SLOW_LOOP_US = static_cast<uint64_t>(TARGET_SLOW_LOOP_DT * 1.0e6f);
+
+    inline constexpr float FAST_LOOP_DT = static_cast<float>(FAST_LOOP_US * 1.0e-6f);
+    inline constexpr float SLOW_LOOP_DT = static_cast<float>(SLOW_LOOP_US * 1.0e-6f);
 }
 
 namespace Kinematics {
