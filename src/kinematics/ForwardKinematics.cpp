@@ -23,7 +23,8 @@ void ForwardKinematics::update(Vec2 const& wheelAngles, std::optional<float> hea
     float const deltaTheta = (dRight - dLeft) / Chassis::AXLE_LENGTH;
     float const theta = heading.value_or(m_prevTheta + deltaTheta);
 
-    m_state.position += Vec2::fromPolar(d, m_prevTheta + deltaTheta / 2.0f);
+    // m_state.position += Vec2::fromPolar(d, m_prevTheta + deltaTheta / 2.0f);
+    m_state.position += Vec2::fromPolar(d, (m_prevTheta + theta) / 2.0f);
     m_state.angle = theta;
     m_state.angularVelocity =
         angularVelocity.value_or(m_angularVelocityFilter.update((theta - m_prevTheta) / dt, dt));

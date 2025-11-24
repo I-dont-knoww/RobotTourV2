@@ -121,7 +121,7 @@ void core0() {
 
     motors.spin(0.0f);
     sleep_ms(static_cast<uint32_t>(Integration::FINAL_STATE_MEASUREMENT_DELAY * 1000.0f));
-    
+
     ledRGB.setRGB(Status::FINISHED);
     Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
     float const finalTime = time.elapsed();
@@ -156,9 +156,11 @@ void core1() {
     while (core0Status < RUNNING) tight_loop_contents();
 
     auto core1Loop = [&]() {
-        forwardKinematics.update(
-            encoders.data(), fusion.update(gyroscope.angularVelocity(), Integration::FAST_LOOP_DT),
-            gyroscope.angularVelocity(), Integration::FAST_LOOP_DT);
+        float const angularVelocity = gyroscope.angularVelocity();
+        float const angle = fusion.update(angularVelocity, Integration::FAST_LOOP_DT);
+
+        forwardKinematics.update(encoders.data(), angle, angularVelocity,
+                                 Integration::FAST_LOOP_DT);
 
         auto const& state = forwardKinematics.state();
         atomicForwardKinematicsState.store(forwardKinematics.state());

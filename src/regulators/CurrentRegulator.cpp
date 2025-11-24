@@ -16,7 +16,7 @@ static constexpr size_t SCALE_VALUE_COUNT = 5;
 
 std::optional<float> divide(float a, float b) {
     if (b == 0.0f) return std::nullopt;
-    return a / b;
+    else return a / b;
 }
 
 std::array<std::optional<float>, SCALE_VALUE_COUNT> getScaleValues(Vec2 const& mins,

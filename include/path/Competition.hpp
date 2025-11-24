@@ -47,6 +47,6 @@ namespace Competition {
 
     inline constexpr auto PATH = Compiler::compile(COMMANDS);
     inline constexpr auto TARGET_TIMES = Compiler::getTargetTimes(COMMANDS, PATH, TARGET_TIME);
-    inline constexpr auto BRUH = Compiler::getTurnTimes(PATH);
+    inline constexpr auto TURN_TIMES = Compiler::TargetTime::getTurnTimes(PATH);
     inline constexpr Vec2 DESTINATION = Compiler::getDestination(PATH) / SQUARE_SIZE;
 }

@@ -158,73 +158,75 @@ namespace Compiler {
         return path;
     }
 
-    template <size_t N>
-    constexpr float getEffectiveLength(std::array<Command, N> const& commands,
-                                       std::array<Path, N> const& path) {
-        Vec2 previousPosition{ 0.0f, 0.0f };
-        float totalLength = 0.0f;
-        for (size_t i = 0; i < N; ++i) {
-            Vec2 const& currentPosition = path[i].position;
+    namespace TargetTime {
+        template <size_t N>
+        constexpr float getEffectiveLength(std::array<Command, N> const& commands,
+                                           std::array<Path, N> const& path) {
+            Vec2 previousPosition{ 0.0f, 0.0f };
+            float totalLength = 0.0f;
+            for (size_t i = 0; i < N; ++i) {
+                Vec2 const& currentPosition = path[i].position;
 
-            if (!commands[i].targetTime.has_value())
-                totalLength += (currentPosition - previousPosition).length();
+                if (!commands[i].targetTime.has_value())
+                    totalLength += (currentPosition - previousPosition).length();
 
-            previousPosition = currentPosition;
+                previousPosition = currentPosition;
+            }
+            return totalLength;
         }
-        return totalLength;
-    }
 
-    template <size_t N>
-    constexpr std::array<float, N> getTurnTimes(std::array<Path, N> const& path) {
-        using Manager::Rotation::MAX_SPEED;
-        using Manager::Rotation::TURN_TIME_OFFSET;
+        template <size_t N>
+        constexpr std::array<float, N> getTurnTimes(std::array<Path, N> const& path) {
+            using Manager::Rotation::MAX_SPEED;
+            using Manager::Rotation::TURN_TIME_OFFSET;
 
-        std::array<float, N> turnTimes{ 0.0f };
+            std::array<float, N> turnTimes{ 0.0f };
 
-        Vec2 firstPosition{ 0.0f, 0.0f };
-        Vec2 secondPosition = path[0].position;
-        for (size_t i = 1; i < N; ++i) {
-            Vec2 const& thirdPosition = path[i].position;
+            Vec2 firstPosition{ 0.0f, 0.0f };
+            Vec2 secondPosition = path[0].position;
+            for (size_t i = 1; i < N; ++i) {
+                Vec2 const& thirdPosition = path[i].position;
 
-            if (path[i - 1].flags & Path::STOP) {
-                Radians angle1{ (thirdPosition - secondPosition).angle() };
-                Radians angle2{ (secondPosition - firstPosition).angle() };
+                if (path[i - 1].flags & Path::STOP) {
+                    Radians angle1{ (thirdPosition - secondPosition).angle() };
+                    Radians angle2{ (secondPosition - firstPosition).angle() };
 
-                if (path[i].flags & Path::REVERSE) angle1 += Constants::PI;
-                if (path[i - 1].flags & Path::REVERSE) angle2 += Constants::PI;
+                    if (path[i].flags & Path::REVERSE) angle1 += Constants::PI;
+                    if (path[i - 1].flags & Path::REVERSE) angle2 += Constants::PI;
 
-                float angle = angle1 - angle2;
-                if (angle < 0.0f) angle = -angle;
+                    float angle = angle1 - angle2;
+                    if (angle < 0.0f) angle = -angle;
 
-                if (angle > 1.0e-6f) turnTimes[i] = angle / MAX_SPEED + TURN_TIME_OFFSET;
+                    if (angle > 1.0e-6f) turnTimes[i] = angle / MAX_SPEED + TURN_TIME_OFFSET;
+                }
+
+                firstPosition = secondPosition;
+                secondPosition = thirdPosition;
             }
 
-            firstPosition = secondPosition;
-            secondPosition = thirdPosition;
+            return turnTimes;
         }
 
-        return turnTimes;
-    }
-
-    template <size_t N>
-    constexpr float getTotalForcedTargetTime(std::array<Command, N> const& commands,
-                                             std::array<Path, N> const& path) {
-        float totalForcedTargetTime = 0.0f;
-        for (size_t i = 0; i < N; ++i)
-            if (commands[i].targetTime.has_value())
-                totalForcedTargetTime += commands[i].targetTime.value();
-        return totalForcedTargetTime;
+        template <size_t N>
+        constexpr float getTotalForcedTargetTime(std::array<Command, N> const& commands,
+                                                 std::array<Path, N> const& path) {
+            float totalForcedTargetTime = 0.0f;
+            for (size_t i = 0; i < N; ++i)
+                if (commands[i].targetTime.has_value())
+                    totalForcedTargetTime += commands[i].targetTime.value();
+            return totalForcedTargetTime;
+        }
     }
 
     template <size_t N>
     constexpr std::array<float, N> getTargetTimes(std::array<Command, N> const& commands,
                                                   std::array<Path, N> const& path,
                                                   float targetTime) {
-        float effectiveLength = getEffectiveLength(commands, path);
+        float effectiveLength = TargetTime::getEffectiveLength(commands, path);
 
-        std::array<float, N> turnTimes = getTurnTimes(path);
+        std::array<float, N> turnTimes = TargetTime::getTurnTimes(path);
         float totalTurnTime = std::accumulate(turnTimes.begin(), turnTimes.end(), 0.0f);
-        float totalForcedTargetTime = getTotalForcedTargetTime(commands, path);
+        float totalForcedTargetTime = TargetTime::getTotalForcedTargetTime(commands, path);
         float effectiveTargetTime = targetTime - totalTurnTime - totalForcedTargetTime;
 
         std::array<float, N> targetTimes{};

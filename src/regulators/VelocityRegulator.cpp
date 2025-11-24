@@ -36,8 +36,12 @@ Vec2 VelocityRegulator::update(Vec2 const& currentVelocity, Radians currentAngle
 
     float leftOffsetVoltage = leftVoltage;
     float rightOffsetVoltage = rightVoltage * Regulators::Velocity::OFFSET;
-    if (leftOffsetVoltage > batteryVoltage || rightOffsetVoltage > batteryVoltage) {
-        float const largerOffsetVoltage = std::max(leftOffsetVoltage, rightOffsetVoltage);
+
+    if (leftOffsetVoltage > batteryVoltage || leftOffsetVoltage < -batteryVoltage ||
+        rightOffsetVoltage > batteryVoltage || rightOffsetVoltage < -batteryVoltage) {
+        float const largerOffsetVoltage = std::max(std::fabsf(leftOffsetVoltage),
+                                                   std::fabsf(rightOffsetVoltage));
+
         leftOffsetVoltage *= batteryVoltage / largerOffsetVoltage;
         rightOffsetVoltage *= batteryVoltage / largerOffsetVoltage;
     }
