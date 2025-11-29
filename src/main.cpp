@@ -120,15 +120,16 @@ void core0() {
     while (core0Status < FINISHED) tight_loop_contents();
 
     motors.spin(0.0f);
-    sleep_ms(static_cast<uint32_t>(Integration::FINAL_STATE_MEASUREMENT_DELAY * 1000.0f));
-
     ledRGB.setRGB(Status::FINISHED);
-    Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
+
     float const finalTime = time.elapsed();
+    sleep_ms(static_cast<uint32_t>(Integration::FINAL_STATE_MEASUREMENT_DELAY * 1000.0f));
+    Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
+    float const finalAngle = atomicForwardKinematicsState.load().angle;
 
     while (true) {
-        std::printf("Finished with position (%.5f, %.5f) and time %.5f.\n", finalPosition.x,
-                    finalPosition.y, finalTime);
+        std::printf("Finished with position (%.5f, %.5f), angle %.5f\n, and time %.5f.\n",
+                    finalPosition.x, finalPosition.y, finalAngle, finalTime);
         sleep_ms(1000);
     }
 }
