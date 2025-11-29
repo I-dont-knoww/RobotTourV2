@@ -128,7 +128,7 @@ void core0() {
     float const finalAngle = atomicForwardKinematicsState.load().angle;
 
     while (true) {
-        std::printf("Finished with position (%.5f, %.5f), angle %.5f\n, and time %.5f.\n",
+        std::printf("Finished with position (%.5f, %.5f), angle %.5f, and time %.5f.\n",
                     finalPosition.x, finalPosition.y, finalAngle, finalTime);
         sleep_ms(1000);
     }

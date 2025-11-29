@@ -10,35 +10,11 @@
 namespace Competition {
     using namespace Compiler::Tokens;
 
-    inline constexpr float TARGET_TIME = 65.0f;
+    inline constexpr float TARGET_TIME = 2.0f;
     inline constexpr auto COMMANDS = std::to_array<Compiler::Command>({
         // clang-format off
 
-        FIRST_MOVE,
-
-        moveby(LEFT),
-        moveby(UP),
-        moveby(UP),
-        moveby(RIGHT),
-        moveby(RIGHT),
-        moveby(RIGHT),
-        moveby(UP),
-        moveby(0.7f * RIGHT),
-        moveby(0.7f * LEFT) & REVERSE,
-        moveby(DOWN),
-        moveby(DOWN),
-        moveby(RIGHT),
-        moveby(0.7f * DOWN),
-        moveby(0.7f * UP) & REVERSE,
-        moveby(LEFT),
-        moveby(UP),
-        moveby(LEFT),
-        moveby(LEFT),
-        moveby(UP),
-        moveby(0.7f * RIGHT),
-        moveby(0.7f * LEFT) & REVERSE,
-
-        moveby(LEFT) & LAST_MOVE & OFFSET_ONCE(6.15f * UP + 5.0f * RIGHT)
+        moveby(20.0f * UP) & CENTIMETERS
 
         // clang-format on
     });
