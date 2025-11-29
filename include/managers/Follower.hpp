@@ -24,22 +24,25 @@ using uint = unsigned int;
 template <size_t N>
 class Follower {
 public:
-    Follower(std::array<Path, N> const& path, std::array<float, N> const& targetTimes)
-        : m_path{ path }, m_targetTimes{ targetTimes } {
+    Follower(std::array<Path, N> const& path, std::array<float, N> const& targetTimes, float dt)
+        : m_path{ path },
+          m_targetTimes{ targetTimes },
+          m_straightManager{ dt },
+          m_rotationManager{} {
         setupNextMode({ 0.0f, 0.0f });
     }
 
     bool finished() { return m_finished; }
 
-    Vec2 update(ForwardKinematics::State const& state, float currentTime, float dt) {
+    Vec2 update(ForwardKinematics::State const& state, float currentTime) {
         if (m_exitCondition.check(state.position, state.angle))
             m_finished = setupNextMode(state.position);
         if (m_finished) return { 0.0f, 0.0f };
 
         if (m_mode == movement)
             return m_straightManager.update(state.position, state.angle, state.angularVelocity,
-                                            currentTime, dt);
-        else if (m_mode == rotation) return { 0.0f, m_rotationManager.update(state.angle, dt) };
+                                            currentTime);
+        else if (m_mode == rotation) return { 0.0f, m_rotationManager.update(state.angle) };
         else return { 0.0f, 0.0f };
     }
 
@@ -109,8 +112,8 @@ private:
     std::array<Path, N> m_path{};
     std::array<float, N> m_targetTimes{};
 
-    Straight m_straightManager{};
-    Rotation m_rotationManager{};
+    Straight m_straightManager;
+    Rotation m_rotationManager;
 
     ExitCondition m_exitCondition{};
 

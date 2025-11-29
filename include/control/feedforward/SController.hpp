@@ -6,7 +6,7 @@ class SController {
 public:
     SController(float kS) : m_kS{ kS } {}
 
-    float update(float setpoint, float, float) {
+    float update(float setpoint, float) {
         return (setpoint != 0.0f) * std::copysignf(m_kS, setpoint);
     }
 

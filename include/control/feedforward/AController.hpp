@@ -1,29 +1,25 @@
 #pragma once
 
+#include "filters/LagFilter.hpp"
+
 #include "Constants.hpp"
 
 class AController {
 public:
-    AController(float kA, float cutoff)
-        : m_kA{ kA }, m_tau{ 1.0f / (2.0f * Constants::PI * cutoff) } {}
+    AController(float kA, float alpha, float dt)
+        : m_filter{ alpha }, m_k{ kA / dt } {}
 
-    float update(float setpoint, float, float dt) {
-        m_differentiator =
-            (2.0f * m_kA * (setpoint - m_prevSetpoint) + (2.0f * m_tau - dt) * m_differentiator) /
-            (2.0f * m_tau + dt);
+    float update(float setpoint, float) {
+        float const filteredSetpoint = m_filter.update(setpoint);
+        
+        float const output = m_k * (setpoint - m_prevSetpoint);
         m_prevSetpoint = setpoint;
-
-        return m_differentiator;
-
-        // float const output = m_kA * (setpoint - m_prevSetpoint) / dt;
-        // m_prevSetpoint = setpoint;
-        // return output;
+        return output;
     }
 
 private:
-    float m_kA{};
-    float m_tau{};
+    LagFilter m_filter;
+    float const m_k{};
 
-    float m_differentiator = 0.0f;
     float m_prevSetpoint = 0.0f;
 };

@@ -7,9 +7,9 @@
 
 #include <algorithm>
 
-float Rotation::update(Radians currentAngle, float dt) {
+float Rotation::update(Radians currentAngle) {
     Radians const angularError = m_targetAngle - currentAngle;
 
-    float const angularVelocity = m_rotationController.update(angularError, 0.0f, dt);
+    float const angularVelocity = m_rotationController.update(angularError, 0.0f);
     return std::clamp(angularVelocity, -Manager::Rotation::MAX_SPEED, Manager::Rotation::MAX_SPEED);
 }

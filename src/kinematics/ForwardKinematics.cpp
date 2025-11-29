@@ -9,10 +9,17 @@
 
 #include <optional>
 
-ForwardKinematics::ForwardKinematics(Vec2 const& wheelAngles) : m_prevWheelAngles{ wheelAngles } {}
+ForwardKinematics::ForwardKinematics(Vec2 const& wheelAngles, float dt)
+    : m_velocityXFilter{ Kinematics::Forward::VELOCITY_CUTOFF_FREQUENCY, dt },
+      m_velocityYFilter{ Kinematics::Forward::VELOCITY_CUTOFF_FREQUENCY, dt },
+      m_leftWheelSpeedFilter{ Kinematics::Forward::WHEEL_SPEED_CUTOFF_FREQUENCY, dt },
+      m_rightWheelSpeedFilter{ Kinematics::Forward::WHEEL_SPEED_CUTOFF_FREQUENCY, dt },
+      m_angularVelocityFilter{ Kinematics::Forward::VELOCITY_CUTOFF_FREQUENCY, dt },
+      m_prevWheelAngles{ wheelAngles },
+      m_dt{ dt } {}
 
 void ForwardKinematics::update(Vec2 const& wheelAngles, std::optional<float> heading,
-                               std::optional<float> angularVelocity, float dt) {
+                               std::optional<float> angularVelocity) {
     Radians const dWheelAngleLeft{ wheelAngles.x - m_prevWheelAngles.x };
     Radians const dWheelAngleRight{ wheelAngles.y - m_prevWheelAngles.y };
 
@@ -27,14 +34,14 @@ void ForwardKinematics::update(Vec2 const& wheelAngles, std::optional<float> hea
     m_state.position += Vec2::fromPolar(d, (m_prevTheta + theta) / 2.0f);
     m_state.angle = theta;
     m_state.angularVelocity =
-        angularVelocity.value_or(m_angularVelocityFilter.update((theta - m_prevTheta) / dt, dt));
+        angularVelocity.value_or(m_angularVelocityFilter.update((theta - m_prevTheta) / m_dt));
 
-    Vec2 const velocity{ (m_state.position - m_prevPosition) / dt };
-    m_state.velocity.x = m_velocityXFilter.update(velocity.x, dt);
-    m_state.velocity.y = m_velocityYFilter.update(velocity.y, dt);
+    Vec2 const velocity{ (m_state.position - m_prevPosition) / m_dt };
+    m_state.velocity.x = m_velocityXFilter.update(velocity.x);
+    m_state.velocity.y = m_velocityYFilter.update(velocity.y);
 
-    m_state.wheelSpeeds.x = m_leftWheelSpeedFilter.update(dWheelAngleLeft.toFloat() / dt, dt);
-    m_state.wheelSpeeds.y = m_rightWheelSpeedFilter.update(dWheelAngleRight.toFloat() / dt, dt);
+    m_state.wheelSpeeds.x = m_leftWheelSpeedFilter.update(dWheelAngleLeft.toFloat() / m_dt);
+    m_state.wheelSpeeds.y = m_rightWheelSpeedFilter.update(dWheelAngleRight.toFloat() / m_dt);
 
     m_prevPosition = m_state.position;
     m_prevWheelAngles = wheelAngles;

@@ -4,7 +4,7 @@ class PController {
 public:
     PController(float kP) : m_kP{ kP } {}
 
-    float update(float setpoint, float measurement, float) {
+    float update(float setpoint, float measurement) {
         return (setpoint - measurement) * m_kP;
     }
 

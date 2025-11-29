@@ -4,9 +4,9 @@
 #include <tuple>
 
 template <typename T>
-concept ControllerType = requires(T controller, float setpoint, float measurement, float dt) {
+concept ControllerType = requires(T controller, float setpoint, float measurement) {
     requires std::copy_constructible<T>;
-    { controller.update(setpoint, measurement, dt) } -> std::same_as<float>;
+    { controller.update(setpoint, measurement) } -> std::same_as<float>;
 };
 
 template <ControllerType... ControllerTypes>
@@ -14,8 +14,8 @@ class Controller {
 public:
     Controller(ControllerTypes... controllers) : m_controllers{ controllers... } {}
 
-    float update(float setpoint, float measurement, float dt) {
-        return (std::get<ControllerTypes>(m_controllers).update(setpoint, measurement, dt) + ...);
+    float update(float setpoint, float measurement) {
+        return (std::get<ControllerTypes>(m_controllers).update(setpoint, measurement) + ...);
     }
 
 private:

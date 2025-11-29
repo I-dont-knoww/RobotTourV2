@@ -18,34 +18,21 @@
 
 class VelocityRegulator {
 public:
-    VelocityRegulator() = default;
+    VelocityRegulator(float dt);
 
     void setTargets(float targetLinearVelocity, float targetAngularVelocity) {
         m_targetLinearVelocity = targetLinearVelocity;
         m_targetAngularVelocity = targetAngularVelocity;
     }
 
-    Vec2 update(Vec2 const& currentVelocity, Radians currentAngle, float currentAngularVelocity, float batteryVoltage, float dt);
+    Vec2 update(Vec2 const& currentVelocity, Radians currentAngle, float currentAngularVelocity,
+                float batteryVoltage);
 
 private:
     Controller<SController, VController, AController, PController, IController>
-        m_linearVelocityController{
-            { Regulators::Velocity::Linear::kS },
-            { Regulators::Velocity::Linear::kV },
-            { Regulators::Velocity::Linear::kA, Regulators::Velocity::Linear::CUTOFF_FREQUENCY },
-            { Regulators::Velocity::Linear::kP },
-            { Regulators::Velocity::Linear::kI, Regulators::Velocity::Linear::MIN_INT,
-              Regulators::Velocity::Linear::MAX_INT }
-        };
+        m_linearVelocityController;
     Controller<SController, VController, AController, PController, IController>
-        m_anglularVelocityController{
-            { Regulators::Velocity::Angular::kS },
-            { Regulators::Velocity::Angular::kV },
-            { Regulators::Velocity::Angular::kA, Regulators::Velocity::Angular::CUTOFF_FREQUENCY },
-            { Regulators::Velocity::Angular::kP },
-            { Regulators::Velocity::Angular::kI, Regulators::Velocity::Angular::MIN_INT,
-              Regulators::Velocity::Angular::MAX_INT }
-        };
+        m_anglularVelocityController;
 
     LagFilter m_linearVelocitySetpointFilter{ Regulators::Velocity::Linear::LAG_FILTER_K };
     LagFilter m_angularVelocitySetpointFilter{ Regulators::Velocity::Angular::LAG_FILTER_K };

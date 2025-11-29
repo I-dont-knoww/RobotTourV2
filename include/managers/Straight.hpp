@@ -14,21 +14,17 @@
 
 class Straight {
 public:
-    Straight() = default;
+    Straight(float dt);
 
     void set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
              float turnAngle, bool reverse, bool stop);
 
     Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
-                float currentTime, float dt);
+                float currentTime);
 
 private:
-    Controller<PController, DController> m_headingController{ { Manager::Straight::angularKp },
-                                                              { Manager::Straight::angularKd,
-                                                                Manager::Straight::FILTER_ALPHA } };
-    Controller<PController, DController> m_linearController{ { Manager::Straight::linearKp },
-                                                             { Manager::Straight::linearKd,
-                                                               Manager::Straight::FILTER_ALPHA } };
+    Controller<PController, DController> m_headingController;
+    Controller<PController, DController> m_linearController;
 
     Vec2 m_startPosition{};
     Vec2 m_targetPosition{};

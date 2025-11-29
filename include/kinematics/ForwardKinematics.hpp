@@ -12,7 +12,7 @@
 
 class ForwardKinematics {
 public:
-    ForwardKinematics(Vec2 const& wheelAngles);
+    ForwardKinematics(Vec2 const& wheelAngles, float dt);
 
     struct State {
         Vec2 position{};
@@ -25,24 +25,26 @@ public:
     };
 
     void update(Vec2 const& wheelAngles, std::optional<float> heading,
-                std::optional<float> angularVelocity, float dt);
+                std::optional<float> angularVelocity);
 
     constexpr decltype(auto) state(this auto&& self) {
         return std::forward_like<decltype(self)>(self.m_state);
     }
 
 private:
-    RCFilter m_velocityXFilter{ Kinematics::Forward::RC_FILTER_CUTOFF_FREQUENCY };
-    RCFilter m_velocityYFilter{ Kinematics::Forward::RC_FILTER_CUTOFF_FREQUENCY };
+    RCFilter m_velocityXFilter;
+    RCFilter m_velocityYFilter;
 
-    RCFilter m_leftWheelSpeedFilter{ 100.0f };
-    RCFilter m_rightWheelSpeedFilter{ 100.0f };
+    RCFilter m_leftWheelSpeedFilter;
+    RCFilter m_rightWheelSpeedFilter;
 
-    RCFilter m_angularVelocityFilter{ Kinematics::Forward::RC_FILTER_CUTOFF_FREQUENCY };
+    RCFilter m_angularVelocityFilter;
 
     State m_state{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0.0f };
 
     Vec2 m_prevPosition{ 0.0f, 0.0f };
     Vec2 m_prevWheelAngles{};
     float m_prevTheta = Constants::PI / 2.0f;
+
+    float const m_dt{};
 };

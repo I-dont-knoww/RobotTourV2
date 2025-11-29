@@ -65,7 +65,8 @@ namespace Drivers {
 
 namespace Integration {
     inline constexpr float TARGET_FAST_LOOP_HZ = 32.0e3f;
-    inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
+    // inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
+    inline constexpr float TARGET_SLOW_LOOP_HZ = 2.0e3f;
 
     inline constexpr float CALIBRATION_DELAY = 1.0f;
     inline constexpr float FINAL_STATE_MEASUREMENT_DELAY = 1.0f;
@@ -83,7 +84,9 @@ namespace Integration {
 namespace Kinematics {
     namespace Forward {
         inline constexpr size_t MA_FILTER_LENGTH = 50u;
-        inline constexpr float RC_FILTER_CUTOFF_FREQUENCY = 10u;
+
+        inline constexpr float VELOCITY_CUTOFF_FREQUENCY = 10.0f;
+        inline constexpr float WHEEL_SPEED_CUTOFF_FREQUENCY = 100.0f;
     }
 
     namespace Inverse {

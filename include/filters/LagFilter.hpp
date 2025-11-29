@@ -4,7 +4,7 @@ class LagFilter {
 public:
     LagFilter(float k);
 
-    float update(float input, float dt);
+    float update(float input);
 
 private:
     float const m_k{};

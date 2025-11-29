@@ -17,7 +17,7 @@ public:
 
     void set(Radians targetAngle) { m_targetAngle = targetAngle; }
 
-    float update(Radians currentAngle, float dt);
+    float update(Radians currentAngle);
 
 private:
     Controller<SController, PController> m_rotationController{ { Manager::Rotation::kS },

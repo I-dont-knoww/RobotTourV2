@@ -8,6 +8,12 @@
 #include <cmath>
 #include <optional>
 
+Straight::Straight(float dt)
+    : m_headingController{ { Manager::Straight::angularKp },
+                           { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
+      m_linearController{ { Manager::Straight::linearKp },
+                          { Manager::Straight::linearKd, Manager::Straight::FILTER_ALPHA, dt } } {}
+
 float getHeadingError(Radians targetAngle, Radians currentAngle, bool reverse) {
     Radians headingError = currentAngle - targetAngle;
     if (reverse) return headingError + Radians{ Constants::PI };
@@ -96,11 +102,11 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
 }
 
 Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
-                      float currentTime, float dt) {
+                      float currentTime) {
     float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
     float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
-    float const headingErrorSpeed = m_headingController.update(0.0f, headingError, dt);
-    float const linearErrorSpeed = m_linearController.update(0.0f, linearError, dt);
+    float const headingErrorSpeed = m_headingController.update(0.0f, headingError);
+    float const linearErrorSpeed = m_linearController.update(0.0f, linearError);
     float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, m_reverse);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);

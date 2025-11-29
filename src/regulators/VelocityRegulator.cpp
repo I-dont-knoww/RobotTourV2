@@ -5,21 +5,39 @@
 
 #include <algorithm>
 
+VelocityRegulator::VelocityRegulator(float dt)
+    : m_linearVelocityController{ { Regulators::Velocity::Linear::kS },
+                                  { Regulators::Velocity::Linear::kV },
+                                  { Regulators::Velocity::Linear::kA,
+                                    Regulators::Velocity::Linear::CUTOFF_FREQUENCY, dt },
+                                  { Regulators::Velocity::Linear::kP },
+                                  { Regulators::Velocity::Linear::kI,
+                                    Regulators::Velocity::Linear::MIN_INT,
+                                    Regulators::Velocity::Linear::MAX_INT, dt } },
+      m_anglularVelocityController{ { Regulators::Velocity::Angular::kS },
+                                    { Regulators::Velocity::Angular::kV },
+                                    { Regulators::Velocity::Angular::kA,
+                                      Regulators::Velocity::Angular::CUTOFF_FREQUENCY, dt },
+                                    { Regulators::Velocity::Angular::kP },
+                                    { Regulators::Velocity::Angular::kI,
+                                      Regulators::Velocity::Angular::MIN_INT,
+                                      Regulators::Velocity::Angular::MAX_INT, dt } } {}
+
 Vec2 VelocityRegulator::update(Vec2 const& currentVelocity, Radians currentAngle,
-                               float currentAngularVelocity, float batteryVoltage, float dt) {
+                               float currentAngularVelocity, float batteryVoltage) {
     float const angleDifference = Radians{ currentVelocity.angle() + Constants::PI / 2.0f } -
                                   currentAngle;
     float const currentLinearVelocity = std::copysignf(currentVelocity.length(), angleDifference);
 
-    float const filteredTargetLinearVelocity = m_linearVelocitySetpointFilter.update(
-        m_targetLinearVelocity, dt);
+    float const filteredTargetLinearVelocity =
+        m_linearVelocitySetpointFilter.update(m_targetLinearVelocity);
     float const linearVelocityTargetVoltage = m_linearVelocityController.update(
-        filteredTargetLinearVelocity, currentLinearVelocity, dt);
+        filteredTargetLinearVelocity, currentLinearVelocity);
 
-    float const filteredTargetAngularVelocity = m_angularVelocitySetpointFilter.update(
-        m_targetAngularVelocity, dt);
+    float const filteredTargetAngularVelocity =
+        m_angularVelocitySetpointFilter.update(m_targetAngularVelocity);
     float const anglularVelocityControlTargetVoltage = m_anglularVelocityController.update(
-        filteredTargetAngularVelocity, currentAngularVelocity, dt);
+        filteredTargetAngularVelocity, currentAngularVelocity);
 
     float const linearVelocityVoltageBudget = batteryVoltage *
                                               Regulators::Velocity::LINEAR_VELOCITY_VOLTAGE_BUDGET;

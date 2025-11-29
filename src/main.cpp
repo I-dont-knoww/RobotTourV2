@@ -53,8 +53,8 @@ void core0() {
     LedRGB ledRGB{ Pins::LedRGB::RED, Pins::LedRGB::GREEN, Pins::LedRGB::BLUE };
 
     CurrentRegulator currentRegulator{};
-    VelocityRegulator velocityRegulator{};
-    Follower follower{ Competition::PATH, Competition::TARGET_TIMES };
+    VelocityRegulator velocityRegulator{ Integration::SLOW_LOOP_DT };
+    Follower follower{ Competition::PATH, Competition::TARGET_TIMES, Integration::SLOW_LOOP_DT };
 
     core0Status = INITIALIZED;
     while (core1Status < INITIALIZED) tight_loop_contents();
@@ -86,16 +86,14 @@ void core0() {
         auto const state = atomicForwardKinematicsState.load();
 
         time.update();
-        Vec2 const targetSpeeds = follower.update(state, time.elapsed(), Integration::SLOW_LOOP_DT);
+        Vec2 const targetSpeeds = follower.update(state, time.elapsed());
 
         velocityRegulator.setTargets(targetSpeeds.x, targetSpeeds.y);
         Vec2 const targetVoltages = velocityRegulator.update(
-            state.velocity, state.angle, state.angularVelocity, battery.voltage(),
-            Integration::SLOW_LOOP_DT);
+            state.velocity, state.angle, state.angularVelocity, battery.voltage());
 
         currentRegulator.setTargetVoltage(targetVoltages);
-        Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage(),
-                                                           Integration::SLOW_LOOP_DT);
+        Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage());
         motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
 
         if (follower.finished()) {
@@ -137,7 +135,7 @@ void core0() {
 void core1() {
     Encoders encoders{ pio0, Pins::Encoders::CS_LEFT, Pins::Encoders::CS_RIGHT, Pins::Encoders::SCK,
                        Pins::Encoders::MISO };
-    Fusion fusion{};
+    Fusion fusion{ Integration::FAST_LOOP_DT };
 
     core1Status = INITIALIZED;
     while (core0Status < CALIBRATING) tight_loop_contents();
@@ -145,7 +143,7 @@ void core1() {
 
     sleep_ms(static_cast<uint32_t>(Integration::CALIBRATION_DELAY * 1000.0f));
 
-    ForwardKinematics forwardKinematics{ encoders.data() };
+    ForwardKinematics forwardKinematics{ encoders.data(), Integration::FAST_LOOP_DT };
     Gyroscope gyroscope{ pio0,
                          Pins::Gyroscope::CS,
                          Pins::Gyroscope::SCK,
@@ -158,10 +156,9 @@ void core1() {
 
     auto core1Loop = [&]() {
         float const angularVelocity = gyroscope.angularVelocity();
-        float const angle = fusion.update(angularVelocity, Integration::FAST_LOOP_DT);
+        float const angle = fusion.update(angularVelocity);
 
-        forwardKinematics.update(encoders.data(), angle, angularVelocity,
-                                 Integration::FAST_LOOP_DT);
+        forwardKinematics.update(encoders.data(), angle, angularVelocity);
 
         auto const& state = forwardKinematics.state();
         atomicForwardKinematicsState.store(forwardKinematics.state());

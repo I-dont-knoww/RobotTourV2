@@ -59,7 +59,7 @@ Vec2 scale(Vec2 const& mins, Vec2 const& maxes, Vec2 const& targets) {
     else return *scaledVectors[*scaleIndex];
 }
 
-Vec2 CurrentRegulator::update(Vec2 const& wheelSpeeds, float batteryVoltage, float dt) {
+Vec2 CurrentRegulator::update(Vec2 const& wheelSpeeds, float batteryVoltage) {
     using Regulators::Current::KV;
     using Regulators::Current::MAX_CURRENT;
     using Regulators::Current::RESISTANCE;

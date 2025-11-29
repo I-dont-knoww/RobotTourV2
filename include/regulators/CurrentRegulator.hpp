@@ -19,7 +19,7 @@ class CurrentRegulator {
 public:
     CurrentRegulator() = default;
 
-    Vec2 update(Vec2 const& wheelSpeeds, float batteryVoltage, float dt);
+    Vec2 update(Vec2 const& wheelSpeeds, float batteryVoltage);
 
     void setTargetVoltage(Vec2 const& targetVoltages) { m_targetVoltages = targetVoltages; }
 

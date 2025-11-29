@@ -6,29 +6,19 @@
 
 class DController {
 public:
-    DController(float kD, float alpha) : m_filter{ alpha }, m_kD{ kD } {}
+    DController(float kD, float alpha, float dt) : m_filter{ alpha }, m_k{ kD / dt } {}
 
-    float update(float, float measurement, float dt) {
-        // m_differentiator = -(2.0f * m_kD * (measurement - m_prevMeasurement) -
-        //                      (2.0f * m_tau - dt) * m_differentiator) /
-        //                    (2.0f * m_tau + dt);
-        // m_prevMeasurement = measurement;
+    float update(float, float measurement) {
+        float const filteredMeasurement = m_filter.update(measurement);
 
-        // return m_differentiator;
-
-        float const filteredMeasurement = m_filter.update(measurement, dt);
-
-        float const output = -m_kD * (filteredMeasurement - m_prevMeasurement) / dt;
+        float const output = -m_k * (filteredMeasurement - m_prevMeasurement);
         m_prevMeasurement = filteredMeasurement;
         return output;
     }
 
 private:
     LagFilter m_filter;
+    float const m_k{};
 
-    float m_kD{};
-    // float m_tau{};
-
-    float m_differentiator = 0.0f;
     float m_prevMeasurement = 0.0f;
 };
