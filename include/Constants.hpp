@@ -14,7 +14,7 @@ namespace Chassis {
 
     inline constexpr float DOWEL_DISTANCE = 2.314066f;
 
-    inline constexpr float MASS = 0.560f;
+    inline constexpr float MASS = 0.786f;
 }
 
 namespace Constants {
@@ -104,7 +104,8 @@ namespace Manager {
     }
 
     namespace Straight {
-        inline constexpr float slowdownKp = 23.0f;
+        inline constexpr float slowdownKp = 17.0f;
+        // inline constexpr float slowdownKp = 23.0f;
         inline constexpr float slowdownKh = 0.5f;
         inline constexpr float slowdownKs = 7.0f;
 
@@ -117,9 +118,9 @@ namespace Manager {
 
         inline constexpr float FILTER_ALPHA = 1.0f;
 
+        inline constexpr float MAX_CENTRIPETAL = 100.0f;
         inline constexpr float TURN_ANGULAR_SPEED = 3.5f;
-        inline constexpr float DEFAULT_SPEED = 500.0f;
-        inline constexpr float TURN_LINEAR_FACTOR = 6.0f;
+        inline constexpr float MAX_LINEAR_SPEED = 500.0f;
     }
 
     namespace Rotation {

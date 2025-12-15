@@ -43,12 +43,12 @@ float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosition) {
 }
 
 float getSlowdownSpeed(float distanceLeft, std::optional<float> finalSpeed) {
-    using Manager::Straight::DEFAULT_SPEED;
+    using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::slowdownKh;
     using Manager::Straight::slowdownKp;
     using Manager::Straight::slowdownKs;
 
-    if (!finalSpeed.has_value()) return DEFAULT_SPEED;
+    if (!finalSpeed.has_value()) return MAX_LINEAR_SPEED;
 
     return slowdownKp * std::sqrtf(slowdownKh * distanceLeft) + slowdownKs + *finalSpeed;
 }
@@ -67,14 +67,13 @@ float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool
 }
 
 Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
-    using Manager::Follower::TURNING_RADIUS;
     using Manager::Straight::TURN_ANGULAR_SPEED;
-    using Manager::Straight::TURN_LINEAR_FACTOR;
+    using Manager::Straight::MAX_CENTRIPETAL;
 
     angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
 
     if (angularSpeed != 0.0f) {
-        float const maxLinearSpeed = TURN_LINEAR_FACTOR * std::fabsf(TURNING_RADIUS / angularSpeed);
+        float const maxLinearSpeed = MAX_CENTRIPETAL / std::fabsf(angularSpeed);
         linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
     }
 
@@ -83,8 +82,8 @@ Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
 
 void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
                    float turnAngle, bool reverse, bool stop) {
-    using Manager::Straight::TURN_ANGULAR_SPEED;
-    using Manager::Straight::TURN_LINEAR_FACTOR;
+    using Chassis::MASS;
+    using Manager::Straight::MAX_CENTRIPETAL;
 
     m_startPosition = startPosition;
     m_targetPosition = targetPosition;
@@ -94,8 +93,8 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
     if (stop) m_finalSpeed = 0.0f;
     else if (turnAngle == 0.0f) m_finalSpeed = std::nullopt;
     else {
-        float const turnRadius = std::tanf((Constants::PI - turnAngle) / 2.0f);
-        m_finalSpeed = TURN_LINEAR_FACTOR * std::fabsf(turnRadius / TURN_ANGULAR_SPEED);
+        float const turnRadius = std::fabsf(std::tanf((Constants::PI - turnAngle) / 2.0f));
+        m_finalSpeed = std::sqrtf(MAX_CENTRIPETAL * turnRadius / MASS);
     }
 
     m_reverse = reverse;
