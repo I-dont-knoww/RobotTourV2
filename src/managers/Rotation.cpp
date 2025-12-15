@@ -6,10 +6,16 @@
 #include "state/Vector.hpp"
 
 #include <algorithm>
+#include <cmath>
 
-float Rotation::update(Radians currentAngle) {
+Vec2 Rotation::update(Radians currentAngle) {
+    using Manager::Rotation::GRABBING_SPEED;
+    using Manager::Rotation::MAX_SPEED;
+
     Radians const angularError = m_targetAngle - currentAngle;
 
     float const angularVelocity = m_rotationController.update(angularError, 0.0f);
-    return std::clamp(angularVelocity, -Manager::Rotation::MAX_SPEED, Manager::Rotation::MAX_SPEED);
+    float const clampedAngularVelocity = std::clamp(angularVelocity, -MAX_SPEED, MAX_SPEED);
+
+    return { GRABBING_SPEED * std::fabsf(clampedAngularVelocity), clampedAngularVelocity };
 }

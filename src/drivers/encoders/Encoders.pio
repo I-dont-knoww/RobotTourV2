@@ -7,7 +7,7 @@
 .set 2                       ; csLeft and csRight are set pins
 
     set x 23      side 1 [1] ; prepare to take in 24 bits
-    set pins 0b10 side 1 [2] ; reset csRight then pull csLeft low and wait 60 ns
+    set pins 0b10 side 1 [5] ; reset csRight then pull csLeft low and wait 60 ns
     nop           side 0 [1] ; pull clock low for 40 ns
 
 loop1:                       ; loop runs at a period of 80 ns
@@ -16,7 +16,7 @@ loop1:                       ; loop runs at a period of 80 ns
     jmp x-- loop1 side 0     ; pull clock low for the second 20 ns and then loop back
 
     set x 23      side 1 [1] ; prepare to take in 24 bits
-    set pins 0b01 side 1 [2] ; reset csLeft then pull csRight low and wait 60 ns
+    set pins 0b01 side 1 [5] ; reset csLeft then pull csRight low and wait 60 ns
     nop           side 0 [1] ; pull clock low for 40 ns
 
 loop2:                       ; loop runs at a period of 80 ns
