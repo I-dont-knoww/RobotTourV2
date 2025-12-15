@@ -127,7 +127,7 @@ namespace Manager {
         inline constexpr float kP = 3.5f;
 
         inline constexpr float GRABBING_SPEED = 1.0f;
-        
+
         inline constexpr float MAX_SPEED = 2.0f;
         inline constexpr float TURN_TIME_OFFSET = 1.0f;
     }

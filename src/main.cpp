@@ -85,6 +85,12 @@ void core0() {
     auto core0Loop = [&]() {
         auto const state = atomicForwardKinematicsState.load();
 
+        float const linearSpeed = state.velocity.length();
+        float const angularSpeed = state.angularVelocity;
+        float const centripetal = Chassis::MASS * linearSpeed * angularSpeed;
+        std::printf(">linearSpeed:%.5f\n>angularSpeed:%.5f\n", linearSpeed, angularSpeed);
+        std::printf(">centripetal:%.5f\n", centripetal);
+
         time.update();
         Vec2 const targetSpeeds = follower.update(state, time.elapsed());
 
