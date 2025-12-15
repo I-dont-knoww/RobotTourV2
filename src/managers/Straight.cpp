@@ -44,13 +44,13 @@ float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosition) {
 
 float getSlowdownSpeed(float distanceLeft, std::optional<float> finalSpeed) {
     using Manager::Straight::DEFAULT_SPEED;
+    using Manager::Straight::slowdownKh;
     using Manager::Straight::slowdownKp;
     using Manager::Straight::slowdownKs;
 
     if (!finalSpeed.has_value()) return DEFAULT_SPEED;
 
-    float const targetSpeed = slowdownKp * (distanceLeft + *finalSpeed) + slowdownKs;
-    return targetSpeed;
+    return slowdownKp * std::sqrtf(slowdownKh * distanceLeft) + slowdownKs + *finalSpeed;
 }
 
 std::optional<float> getTargetSpeed(float distanceLeft, float targetTime, float currentTime) {
