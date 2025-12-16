@@ -8,8 +8,6 @@
 #include <cmath>
 #include <optional>
 
-#include <cstdio>
-
 Straight::Straight(float dt)
     : m_headingController{ { Manager::Straight::angularKp },
                            { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
@@ -80,9 +78,6 @@ Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
         linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
     }
 
-    std::printf(">targetLinearSpeed:%.5f\n", linearSpeed);
-    std::printf(">targetAngularSpeed:%.5f\n", angularSpeed);
-
     return { linearSpeed, angularSpeed };
 }
 
@@ -121,10 +116,6 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float a
     float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
     auto const targetSpeed = getTargetSpeed(distanceLeft, m_targetTime, currentTime);
     float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
-
-    std::printf(">slowdownSpeed:%.5f\n", slowdownSpeed);
-    std::printf(">targetSpeed:%.5f\n", std::min(150.0f, targetSpeed.value_or(-1.0f)));
-    std::printf(">finalSpeed:%.5f\n", m_finalSpeed.value_or(-1.0f));
 
     return limitSpeeds(linearSpeed, angularSpeed);
 }
