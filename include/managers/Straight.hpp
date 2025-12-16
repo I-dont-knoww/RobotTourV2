@@ -17,7 +17,7 @@ public:
     Straight(float dt);
 
     void set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
-             float turnAngle, bool reverse, bool stop);
+             float stoppingRadius, float turnAngle, bool reverse, bool stop);
 
     Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
                 float currentTime);
@@ -33,6 +33,8 @@ private:
 
     Radians m_targetAngle{};
     float m_targetTime{};
+
+    float m_stoppingRadius{};
 
     bool m_reverse{};
 };

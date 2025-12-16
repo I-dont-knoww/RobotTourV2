@@ -8,6 +8,8 @@
 #include <cmath>
 #include <optional>
 
+#include <cstdio>
+
 Straight::Straight(float dt)
     : m_headingController{ { Manager::Straight::angularKp },
                            { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
@@ -42,7 +44,7 @@ float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosition) {
     return (targetPosition - currentPosition).length();
 }
 
-float getSlowdownSpeed(float distanceLeft, std::optional<float> finalSpeed) {
+float getSlowdownSpeed(std::optional<float> finalSpeed, float distanceLeft, float stoppingRadius) {
     using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::slowdownKh;
     using Manager::Straight::slowdownKp;
@@ -50,7 +52,8 @@ float getSlowdownSpeed(float distanceLeft, std::optional<float> finalSpeed) {
 
     if (!finalSpeed.has_value()) return MAX_LINEAR_SPEED;
 
-    return slowdownKp * std::sqrtf(slowdownKh * distanceLeft) + slowdownKs + *finalSpeed;
+    return slowdownKp * std::sqrtf(slowdownKh * (distanceLeft - stoppingRadius)) + slowdownKs +
+           *finalSpeed;
 }
 
 std::optional<float> getTargetSpeed(float distanceLeft, float targetTime, float currentTime) {
@@ -67,8 +70,8 @@ float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool
 }
 
 Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
-    using Manager::Straight::TURN_ANGULAR_SPEED;
     using Manager::Straight::MAX_CENTRIPETAL;
+    using Manager::Straight::TURN_ANGULAR_SPEED;
 
     angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
 
@@ -77,23 +80,29 @@ Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
         linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
     }
 
+    std::printf(">targetLinearSpeed:%.5f\n", linearSpeed);
+    std::printf(">targetAngularSpeed:%.5f\n", angularSpeed);
+
     return { linearSpeed, angularSpeed };
 }
 
 void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
-                   float turnAngle, bool reverse, bool stop) {
+                   float stoppingRadius, float turnAngle, bool reverse, bool stop) {
     using Chassis::MASS;
+    using Manager::Follower::TURNING_RADIUS;
     using Manager::Straight::MAX_CENTRIPETAL;
 
     m_startPosition = startPosition;
     m_targetPosition = targetPosition;
     m_targetAngle = (targetPosition - startPosition).angle();
     m_targetTime = targetTime;
+    m_stoppingRadius = stoppingRadius;
 
     if (stop) m_finalSpeed = 0.0f;
     else if (turnAngle == 0.0f) m_finalSpeed = std::nullopt;
     else {
-        float const turnRadius = std::fabsf(std::tanf((Constants::PI - turnAngle) / 2.0f));
+        float const turnRadius = TURNING_RADIUS *
+                                 std::fabsf(std::tanf((Constants::PI - turnAngle) / 2.0f));
         m_finalSpeed = std::sqrtf(MAX_CENTRIPETAL * turnRadius / MASS);
     }
 
@@ -109,9 +118,13 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float a
     float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, m_reverse);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
-    float const slowdownSpeed = getSlowdownSpeed(distanceLeft, m_finalSpeed);
+    float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
     auto const targetSpeed = getTargetSpeed(distanceLeft, m_targetTime, currentTime);
     float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
+
+    std::printf(">slowdownSpeed:%.5f\n", slowdownSpeed);
+    std::printf(">targetSpeed:%.5f\n", std::min(150.0f, targetSpeed.value_or(-1.0f)));
+    std::printf(">finalSpeed:%.5f\n", m_finalSpeed.value_or(-1.0f));
 
     return limitSpeeds(linearSpeed, angularSpeed);
 }

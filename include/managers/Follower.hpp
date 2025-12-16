@@ -66,13 +66,13 @@ private:
                                    (currentDirection.length() * previousDirection.length()));
         }
 
-        m_straightManager.set(previousPathPosition, path.position, targetTime, turnAngle,
-                              flags & Path::REVERSE, flags & Path::STOP);
-
         float distanceThreshold = Manager::Follower::TURNING_RADIUS;
         if (flags & Path::ACCURATE)
             distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_ACCURATE;
         else if (flags & Path::STOP) distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_FAST;
+
+        m_straightManager.set(previousPathPosition, path.position, targetTime, distanceThreshold,
+                              turnAngle, flags & Path::REVERSE, flags & Path::STOP);
         m_exitCondition.set({ { currentPosition, path.position, distanceThreshold } },
                             std::nullopt);
 

@@ -101,7 +101,7 @@ void core0() {
         currentRegulator.setTargetVoltage(targetVoltages);
         Vec2 const motorVoltages = currentRegulator.update(state.wheelSpeeds, battery.voltage());
         motors.spin(static_cast<int>(motorVoltages.x), static_cast<int>(motorVoltages.y));
-        
+
         if (follower.finished()) {
             core0Status = FINISHED;
             return false;

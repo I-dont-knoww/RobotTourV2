@@ -104,8 +104,7 @@ namespace Manager {
     }
 
     namespace Straight {
-        inline constexpr float slowdownKp = 17.0f;
-        // inline constexpr float slowdownKp = 23.0f;
+        inline constexpr float slowdownKp = 23.0f;
         inline constexpr float slowdownKh = 0.5f;
         inline constexpr float slowdownKs = 7.0f;
 
