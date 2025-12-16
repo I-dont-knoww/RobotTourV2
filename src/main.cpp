@@ -125,6 +125,12 @@ void core0() {
     Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
     float const finalAngle = atomicForwardKinematicsState.load().angle;
 
+    if (Competition::FAIL_RUN) {
+        sleep_ms(static_cast<uint32_t>(Track::FAILED_RUN_DELAY * 1000.0f));
+        motors.spin(-static_cast<int>(Track::FAILED_RUN_MOTOR_SPEED * Drivers::Motors::MAX_POWER),
+                    static_cast<int>(Track::FAILED_RUN_MOTOR_SPEED * Drivers::Motors::MAX_POWER));
+    }
+
     while (true) {
         std::printf("Finished with position (%.5f, %.5f), angle %.5f, and time %.5f.\n",
                     finalPosition.x, finalPosition.y, finalAngle, finalTime);
