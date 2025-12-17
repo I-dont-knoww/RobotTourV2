@@ -116,6 +116,7 @@ namespace Manager {
         inline constexpr float LINEAR_AUTHORITY = 0.3f;
 
         inline constexpr float FILTER_ALPHA = 1.0f;
+        inline constexpr float CENTRIPETAL_FILTER_CUTOFF = 500.0f;
 
         inline constexpr float MAX_CENTRIPETAL = 120.0f;
         inline constexpr float TURN_ANGULAR_SPEED = 3.5f;

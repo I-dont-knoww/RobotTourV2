@@ -12,14 +12,12 @@ namespace Competition {
 
     inline constexpr bool FAIL_RUN = false;
 
-    inline constexpr float TARGET_TIME = 7.5f;
+    inline constexpr float TARGET_TIME = 0.0f;
     inline constexpr auto COMMANDS = std::to_array<Compiler::Command>({
         // clang-format off
 
         moveby(UP),
-        moveby(UP + LEFT),
-        moveby(UP + RIGHT),
-        moveby(3.0f * DOWN)
+        moveby(0.6f * LEFT)
 
         // clang-format on
     });

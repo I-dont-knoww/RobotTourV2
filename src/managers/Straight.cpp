@@ -12,7 +12,8 @@ Straight::Straight(float dt)
     : m_headingController{ { Manager::Straight::angularKp },
                            { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
       m_linearController{ { Manager::Straight::linearKp },
-                          { Manager::Straight::linearKd, Manager::Straight::FILTER_ALPHA, dt } } {}
+                          { Manager::Straight::linearKd, Manager::Straight::FILTER_ALPHA, dt } },
+      m_centripetalFilter{ Manager::Straight::CENTRIPETAL_FILTER_CUTOFF, dt } {}
 
 float getHeadingError(Radians targetAngle, Radians currentAngle, bool reverse) {
     Radians headingError = currentAngle - targetAngle;
@@ -67,7 +68,7 @@ float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool
     return (reverse ? -1.0f : 1.0f) * linearSpeed;
 }
 
-Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
+Vec2 Straight::limitSpeeds(float linearSpeed, float angularSpeed) {
     using Manager::Straight::MAX_CENTRIPETAL;
     using Manager::Straight::TURN_ANGULAR_SPEED;
 
@@ -75,7 +76,9 @@ Vec2 limitSpeeds(float linearSpeed, float angularSpeed) {
 
     if (angularSpeed != 0.0f) {
         float const maxLinearSpeed = MAX_CENTRIPETAL / std::fabsf(angularSpeed);
-        linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
+        float const filteredMaxLinearSpeed = m_centripetalFilter.update(maxLinearSpeed);
+
+        linearSpeed = std::clamp(linearSpeed, -filteredMaxLinearSpeed, filteredMaxLinearSpeed);
     }
 
     return { linearSpeed, angularSpeed };

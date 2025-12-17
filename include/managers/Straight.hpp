@@ -7,6 +7,8 @@
 #include "control/pid/DController.hpp"
 #include "control/pid/PController.hpp"
 
+#include "filters/RCFilter.hpp"
+
 #include "state/Radians.hpp"
 #include "state/Vector.hpp"
 
@@ -23,8 +25,12 @@ public:
                 float currentTime);
 
 private:
+    Vec2 limitSpeeds(float linearSpeed, float angularSpeed);
+
     Controller<PController, DController> m_headingController;
     Controller<PController, DController> m_linearController;
+
+    RCFilter m_centripetalFilter;
 
     Vec2 m_startPosition{};
     Vec2 m_targetPosition{};
