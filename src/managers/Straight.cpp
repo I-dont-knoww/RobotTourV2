@@ -70,13 +70,15 @@ float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool
 
 Vec2 Straight::limitSpeeds(float linearSpeed, float angularSpeed) {
     using Manager::Straight::MAX_CENTRIPETAL;
+    using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::TURN_ANGULAR_SPEED;
 
     angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
 
     if (angularSpeed != 0.0f) {
         float const maxLinearSpeed = MAX_CENTRIPETAL / std::fabsf(angularSpeed);
-        float const filteredMaxLinearSpeed = m_centripetalFilter.update(maxLinearSpeed);
+        float const filteredMaxLinearSpeed = std::min(MAX_LINEAR_SPEED,
+                                                      m_centripetalFilter.update(maxLinearSpeed));
 
         linearSpeed = std::clamp(linearSpeed, -filteredMaxLinearSpeed, filteredMaxLinearSpeed);
     }
