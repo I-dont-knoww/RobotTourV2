@@ -142,7 +142,7 @@ namespace Compiler {
                 segment.flags |= Path::STOP;
                 segment.flags |= Path::ACCURATE;
             } else if (Vec2::dot(command.amount, nextCommand.amount) < 0.0f ||
-                       command.flags & Path::REVERSE != nextCommand.flags & Path::REVERSE)
+                       (command.flags & Path::REVERSE) != (nextCommand.flags & Path::REVERSE))
                 segment.flags |= Path::STOP;
 
             path[i] = segment;
