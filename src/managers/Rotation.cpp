@@ -17,5 +17,5 @@ Vec2 Rotation::update(Radians currentAngle) {
     float const angularVelocity = m_rotationController.update(angularError, 0.0f);
     float const clampedAngularVelocity = std::clamp(angularVelocity, -MAX_SPEED, MAX_SPEED);
 
-    return { GRABBING_SPEED * std::fabsf(clampedAngularVelocity), clampedAngularVelocity };
+    return { GRABBING_SPEED, clampedAngularVelocity };
 }
