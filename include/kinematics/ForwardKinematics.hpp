@@ -40,7 +40,7 @@ private:
 
     RCFilter m_angularVelocityFilter;
 
-    State m_state{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0.0f };
+    State m_state{};
 
     Vec2 m_prevPosition{ 0.0f, 0.0f };
     Vec2 m_prevWheelAngles{};
