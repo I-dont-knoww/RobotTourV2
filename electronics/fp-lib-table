@@ -1,0 +1,9 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "AOTA-B201610S3R3-101-T")(type "KiCad")(uri "${KIPRJMOD}/AOTA-B201610S3R3-101-T.pretty")(options "")(descr ""))
+  (lib (name "SMALL_C_0402_1005")(type "KiCad")(uri "${KIPRJMOD}/SMALL_C_0402_1005.pretty")(options "")(descr ""))
+  (lib (name "TS-1088-AR02016")(type "KiCad")(uri "${KIPRJMOD}/TS-1088-AR02016.pretty")(options "")(descr ""))
+  (lib (name "MP6550")(type "KiCad")(uri "${KIPRJMOD}/MP6550.pretty")(options "")(descr ""))
+  (lib (name "QMC6309")(type "KiCad")(uri "${KIPRJMOD}/QMC6309.pretty")(options "")(descr ""))
+  (lib (name "ICM42688P")(type "KiCad")(uri "${KIPRJMOD}/ICM42688P.pretty")(options "")(descr ""))
+)

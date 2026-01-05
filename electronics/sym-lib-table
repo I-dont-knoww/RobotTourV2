@@ -1,0 +1,7 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "MP6550")(type "KiCad")(uri "${KIPRJMOD}/MP6550.kicad_sym")(options "")(descr ""))
+  (lib (name "MCU_RaspberryPi_RP2350")(type "KiCad")(uri "${KIPRJMOD}/MCU_RaspberryPi_RP2350.kicad_sym")(options "")(descr ""))
+  (lib (name "ICM42688P")(type "KiCad")(uri "${KIPRJMOD}/ICM42688P.kicad_sym")(options "")(descr ""))
+  (lib (name "QMC6309")(type "KiCad")(uri "${KIPRJMOD}/QMC6309.kicad_sym")(options "")(descr ""))
+)
