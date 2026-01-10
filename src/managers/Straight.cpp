@@ -31,10 +31,13 @@ float getLinearError(Vec2 const& startPosition, Vec2 const& targetPosition,
     return lateralError;
 }
 
-float getAngularSpeed(float headingErrorSpeed, float linearErrorSpeed, bool reverse) {
-    using Manager::Straight::LINEAR_AUTHORITY;
+float getLinearControl(float headingError) {
+    if (headingError < -Constants::PI / 4.0f || headingError > Constants::PI / 4.0f) return 0.0f;
+    else return 100.0f;
+}
 
-    float headingErrorSpeedMagnitude = std::fabsf(headingErrorSpeed) + LINEAR_AUTHORITY;
+float getAngularSpeed(float headingErrorSpeed, float linearErrorSpeed, float linearAuthority) {
+    float const headingErrorSpeedMagnitude = std::fabsf(headingErrorSpeed) + linearAuthority;
     return std::clamp(linearErrorSpeed, -headingErrorSpeedMagnitude, headingErrorSpeedMagnitude) +
            headingErrorSpeed;
 }
@@ -115,7 +118,8 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float a
     float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
     float const headingErrorSpeed = m_headingController.update(0.0f, headingError);
     float const linearErrorSpeed = m_linearController.update(0.0f, linearError);
-    float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, m_reverse);
+    float const linearControl = getLinearControl(headingError);
+    float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, linearControl);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
     float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
