@@ -113,6 +113,7 @@ namespace Manager {
 
         inline constexpr float linearKp = 2.0f;
         inline constexpr float linearKd = 0.1f;
+        inline constexpr float LINEAR_CONTROL_AUTHORITY = 0.3f;
 
         inline constexpr float FILTER_ALPHA = 1.0f;
         inline constexpr float CENTRIPETAL_FILTER_CUTOFF = 500.0f;

@@ -31,9 +31,12 @@ float getLinearError(Vec2 const& startPosition, Vec2 const& targetPosition,
     return lateralError;
 }
 
-float getLinearControl(float headingError) {
-    if (headingError < -Constants::PI / 4.0f || headingError > Constants::PI / 4.0f) return 0.0f;
-    else return 100.0f;
+float getLinearControl(float headingError, float turnAngle) {
+    using Manager::Straight::LINEAR_CONTROL_AUTHORITY;
+
+    float const angleBound = std::max(Constants::PI / 16.0f, std::fabsf(turnAngle / 2.0f));
+    if (headingError < -angleBound || headingError > angleBound) return 0.0f;
+    else return LINEAR_CONTROL_AUTHORITY;
 }
 
 float getAngularSpeed(float headingErrorSpeed, float linearErrorSpeed, float linearAuthority) {
@@ -99,6 +102,7 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
     m_targetPosition = targetPosition;
     m_targetAngle = (targetPosition - startPosition).angle();
     m_targetTime = targetTime;
+    m_turnAngle = turnAngle;
     m_stoppingRadius = stoppingRadius;
 
     if (stop) m_finalSpeed = 0.0f;
@@ -115,10 +119,11 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
 Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
                       float currentTime) {
     float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
-    float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
     float const headingErrorSpeed = m_headingController.update(0.0f, headingError);
+    float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
     float const linearErrorSpeed = m_linearController.update(0.0f, linearError);
-    float const linearControl = getLinearControl(headingError);
+
+    float const linearControl = getLinearControl(headingError, m_turnAngle);
     float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, linearControl);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);

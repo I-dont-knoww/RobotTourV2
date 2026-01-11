@@ -40,6 +40,7 @@ private:
     Radians m_targetAngle{};
     float m_targetTime{};
 
+    float m_turnAngle{};
     float m_stoppingRadius{};
 
     bool m_reverse{};
