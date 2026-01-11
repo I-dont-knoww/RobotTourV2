@@ -62,8 +62,8 @@ public:
 
     void spin(int power) { spin(power, power); }
     void spin(int leftPower, int rightPower) {
-        left().spin(leftPower);
-        right().spin(rightPower);
+        left().spin(-leftPower);
+        right().spin(-rightPower);
     }
 
     Vec2 power() const { return { m_left.power(), m_right.power() }; }
