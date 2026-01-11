@@ -22,8 +22,6 @@
 #include "regulators/CurrentRegulator.hpp"
 #include "regulators/VelocityRegulator.hpp"
 
-#include "storage/Atomic.hpp"
-
 #include "hardware/irq.h"
 #include "hardware/timer.h"
 
@@ -31,10 +29,11 @@
 #include "pico/stdlib.h"
 #include "pico/time.h"
 
+#include <atomic>
 #include <cstdint>
 #include <cstdio>
 
-static Atomic<ForwardKinematics::State> atomicForwardKinematicsState{};
+static std::atomic<ForwardKinematics::State> atomicForwardKinematicsState{};
 
 enum CoreStatus : uint8_t {
     INITIALIZING = 0u,
@@ -83,7 +82,7 @@ void core0() {
     core0Status = RUNNING;
 
     auto core0Loop = [&]() {
-        auto const state = atomicForwardKinematicsState.load();
+        auto const state = atomicForwardKinematicsState.load(std::memory_order_relaxed);
 
         time.update();
         Vec2 const targetSpeeds = follower.update(state, time.elapsed());
@@ -122,8 +121,10 @@ void core0() {
 
     float const finalTime = time.elapsed();
     sleep_ms(static_cast<uint32_t>(Integration::FINAL_STATE_MEASUREMENT_DELAY * 1000.0f));
-    Vec2 const finalPosition = atomicForwardKinematicsState.load().position;
-    float const finalAngle = atomicForwardKinematicsState.load().angle;
+
+    auto const& finalState = atomicForwardKinematicsState.load(std::memory_order_relaxed);
+    Vec2 const finalPosition = finalState.position;
+    float const finalAngle = finalState.angle;
 
     if (Competition::FAIL_RUN) {
         sleep_ms(static_cast<uint32_t>(Track::FAILED_RUN_DELAY * 1000.0f));
@@ -167,7 +168,7 @@ void core1() {
         forwardKinematics.update(encoders.data(), angle, angularVelocity);
 
         auto const& state = forwardKinematics.state();
-        atomicForwardKinematicsState.store(forwardKinematics.state());
+        atomicForwardKinematicsState.store(forwardKinematics.state(), std::memory_order_relaxed);
     };
 
     auto thunk = [](repeating_timer_t* timer) {
