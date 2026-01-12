@@ -166,8 +166,6 @@ void core1() {
         float const angle = fusion.update(angularVelocity);
 
         forwardKinematics.update(encoders.data(), angle, angularVelocity);
-
-        auto const& state = forwardKinematics.state();
         atomicForwardKinematicsState.store(forwardKinematics.state(), std::memory_order_relaxed);
     };
 

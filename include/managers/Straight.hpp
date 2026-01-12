@@ -21,7 +21,7 @@ public:
     void set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
              float stoppingRadius, float turnAngle, bool reverse, bool stop);
 
-    Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
+    Vec2 update(Vec2 const& currentPosition, Radians currentAngle,
                 float currentTime);
 
 private:

@@ -116,7 +116,7 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
     m_reverse = reverse;
 }
 
-Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
+Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, 
                       float currentTime) {
     float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
     float const headingErrorSpeed = m_headingController.update(0.0f, headingError);

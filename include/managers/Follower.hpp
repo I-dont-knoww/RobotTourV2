@@ -40,7 +40,7 @@ public:
         if (m_finished) return { 0.0f, 0.0f };
 
         if (m_mode == movement)
-            return m_straightManager.update(state.position, state.angle, state.angularVelocity,
+            return m_straightManager.update(state.position, state.angle,
                                             currentTime);
         else if (m_mode == rotation) return m_rotationManager.update(state.angle);
         else return { 0.0f, 0.0f };

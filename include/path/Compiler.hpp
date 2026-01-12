@@ -208,8 +208,7 @@ namespace Compiler {
         }
 
         template <size_t N>
-        constexpr float getTotalForcedTargetTime(std::array<Command, N> const& commands,
-                                                 std::array<Path, N> const& path) {
+        constexpr float getTotalForcedTargetTime(std::array<Command, N> const& commands) {
             float totalForcedTargetTime = 0.0f;
             for (size_t i = 0; i < N; ++i)
                 if (commands[i].targetTime.has_value())
@@ -226,7 +225,7 @@ namespace Compiler {
 
         std::array<float, N> turnTimes = TargetTime::getTurnTimes(path);
         float totalTurnTime = std::accumulate(turnTimes.begin(), turnTimes.end(), 0.0f);
-        float totalForcedTargetTime = TargetTime::getTotalForcedTargetTime(commands, path);
+        float totalForcedTargetTime = TargetTime::getTotalForcedTargetTime(commands);
         float effectiveTargetTime = targetTime - totalTurnTime - totalForcedTargetTime;
 
         std::array<float, N> targetTimes{};
