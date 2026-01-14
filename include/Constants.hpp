@@ -104,7 +104,7 @@ namespace Manager {
     }
 
     namespace Straight {
-        inline constexpr float slowdownKp = 23.0f;
+        inline constexpr float slowdownKp = 11.0f;
         inline constexpr float slowdownKh = 0.5f;
         inline constexpr float slowdownKs = 7.0f;
 
@@ -206,7 +206,7 @@ namespace Regulators {
             inline constexpr float MIN_INT = -1.0f;
             inline constexpr float MAX_INT = 1.0f;
 
-            inline constexpr float CUTOFF_FREQUENCY = 10.0f;
+            inline constexpr float FILTER_ALPHA = 1.0f;
 
             inline constexpr float LAG_FILTER_K = 0.05f;
         }
@@ -221,7 +221,7 @@ namespace Regulators {
             inline constexpr float MIN_INT = -10.0f;
             inline constexpr float MAX_INT = 10.0f;
 
-            inline constexpr float CUTOFF_FREQUENCY = 50.0f;
+            inline constexpr float FILTER_ALPHA = 1.0f;
 
             inline constexpr float LAG_FILTER_K = 0.05f;
         }

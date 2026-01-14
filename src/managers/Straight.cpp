@@ -8,8 +8,6 @@
 #include <cmath>
 #include <optional>
 
-#include <cstdio>
-
 Straight::Straight(float dt)
     : m_headingController{ { Manager::Straight::angularKp },
                            { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
@@ -75,22 +73,10 @@ std::optional<float> getTargetSpeed(float targetTime, float currentTime, float d
     float const timeLeft = targetTime - currentTime;
     float const speed = distanceLeft / timeLeft;
 
-    static constexpr float a = 1.0f / (slowdownKp * slowdownKp * slowdownKh);
-    float const b = slowdownKs + *finalSpeed;
-    float const correctedTimeLeft = timeLeft - a * (speed - b - b * std::logf(speed / b));
-
-    // std::printf(">p:%.5f\n", slowdownKp);
-    // std::printf(">h:%.5f\n", slowdownKh);
-    // std::printf(">s:%.5f\n", slowdownKs);
-    // std::printf(">f:%.5f\n", *finalSpeed);
-    // std::printf(">L:%.5f\n", distanceLeft);
-    // std::printf(">t0:%.5f\n", targetTime - currentTime);
-    // std::printf(">a:%.5f\n", a);
-    // std::printf(">c:%.5f\n", b);
-    // std::printf(">v0:%.5f\n", speed);
-
-    // std::printf(">correctedTime:%.5f\n", correctedTimeLeft);
-    // std::printf(">correctedSpeed:%.5f\n", distanceLeft / correctedTimeLeft);
+    static constexpr float alpha = 1.0f / (slowdownKp * slowdownKp * slowdownKh);
+    float const baseSpeed = slowdownKs + *finalSpeed;
+    float const correctedTimeLeft =
+        timeLeft - alpha * (speed - baseSpeed - baseSpeed * std::logf(speed / baseSpeed));
 
     if (correctedTimeLeft <= 0.0f) return std::nullopt;
     else return distanceLeft / correctedTimeLeft;
