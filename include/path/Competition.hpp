@@ -16,8 +16,8 @@ namespace Competition {
     inline constexpr auto COMMANDS = std::to_array<Compiler::Command>({
         // clang-format off
 
-        moveby(0.8f * UP),
-        moveby(0.6f * RIGHT),
+        moveby(UP),
+        // moveby(0.6f * RIGHT),
 
         // clang-format on
     });

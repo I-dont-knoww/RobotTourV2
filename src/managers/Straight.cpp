@@ -8,6 +8,8 @@
 #include <cmath>
 #include <optional>
 
+#include <cstdio>
+
 Straight::Straight(float dt)
     : m_headingController{ { Manager::Straight::angularKp },
                            { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
@@ -61,9 +63,37 @@ float getSlowdownSpeed(std::optional<float> finalSpeed, float distanceLeft, floa
            *finalSpeed;
 }
 
-std::optional<float> getTargetSpeed(float distanceLeft, float targetTime, float currentTime) {
+std::optional<float> getTargetSpeed(float targetTime, float currentTime, float distanceLeft,
+                                    std::optional<float> finalSpeed) {
+    using Manager::Straight::slowdownKh;
+    using Manager::Straight::slowdownKp;
+    using Manager::Straight::slowdownKs;
+
     if (targetTime <= currentTime) return std::nullopt;
-    return distanceLeft / (targetTime - currentTime);
+    if (!finalSpeed) return std::nullopt;
+
+    float const timeLeft = targetTime - currentTime;
+    float const speed = distanceLeft / timeLeft;
+
+    static constexpr float a = 1.0f / (slowdownKp * slowdownKp * slowdownKh);
+    float const b = slowdownKs + *finalSpeed;
+    float const correctedTimeLeft = timeLeft - a * (speed - b - b * std::logf(speed / b));
+
+    // std::printf(">p:%.5f\n", slowdownKp);
+    // std::printf(">h:%.5f\n", slowdownKh);
+    // std::printf(">s:%.5f\n", slowdownKs);
+    // std::printf(">f:%.5f\n", *finalSpeed);
+    // std::printf(">L:%.5f\n", distanceLeft);
+    // std::printf(">t0:%.5f\n", targetTime - currentTime);
+    // std::printf(">a:%.5f\n", a);
+    // std::printf(">c:%.5f\n", b);
+    // std::printf(">v0:%.5f\n", speed);
+
+    // std::printf(">correctedTime:%.5f\n", correctedTimeLeft);
+    // std::printf(">correctedSpeed:%.5f\n", distanceLeft / correctedTimeLeft);
+
+    if (correctedTimeLeft <= 0.0f) return std::nullopt;
+    else return distanceLeft / correctedTimeLeft;
 }
 
 float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool reverse) {
@@ -116,8 +146,7 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
     m_reverse = reverse;
 }
 
-Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, 
-                      float currentTime) {
+Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float currentTime) {
     float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
     float const headingErrorSpeed = m_headingController.update(0.0f, headingError);
     float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
@@ -128,7 +157,7 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle,
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
     float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
-    auto const targetSpeed = getTargetSpeed(distanceLeft, m_targetTime, currentTime);
+    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_finalSpeed);
     float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
 
     return limitSpeeds(linearSpeed, angularSpeed);
