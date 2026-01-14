@@ -22,8 +22,6 @@ namespace Competition {
         // clang-format on
     });
 
-    // 8.3cm
-
     inline constexpr auto PATH = Compiler::compile(COMMANDS);
     inline constexpr auto TARGET_TIMES = Compiler::getTargetTimes(COMMANDS, PATH, TARGET_TIME);
     inline constexpr auto TURN_TIMES = Compiler::TargetTime::getTurnTimes(PATH);
