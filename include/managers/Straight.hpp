@@ -9,6 +9,8 @@
 
 #include "filters/RCFilter.hpp"
 
+#include "path/Path.hpp"
+
 #include "state/Radians.hpp"
 #include "state/Vector.hpp"
 
@@ -16,15 +18,21 @@
 
 class Straight {
 public:
+    struct Movement {
+        Path path{};
+        float targetTime{};
+    };
+
     Straight(float dt);
 
-    void set(Vec2 const& startPosition, Vec2 const& targetPosition, float targetTime,
-             float stoppingRadius, float turnAngle, bool reverse, bool stop);
+    void set(Vec2 const& startPosition, Movement const& currentMovement,
+             std::optional<Movement> const& nextMovement, float stoppingRadius);
 
-    Vec2 update(Vec2 const& currentPosition, Radians currentAngle,
-                float currentTime);
+    Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float currentTime);
 
 private:
+    float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool reverse);
+
     Vec2 limitSpeeds(float linearSpeed, float angularSpeed);
 
     Controller<PController, DController> m_headingController;
