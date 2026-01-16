@@ -5,23 +5,24 @@
 
 #include <algorithm>
 
-VelocityRegulator::VelocityRegulator(float dt)
-    : m_linearVelocityController{ { Regulators::Velocity::Linear::kS },
-                                  { Regulators::Velocity::Linear::kV },
-                                  { Regulators::Velocity::Linear::kA,
-                                    Regulators::Velocity::Linear::FILTER_ALPHA, dt },
-                                  { Regulators::Velocity::Linear::kP },
-                                  { Regulators::Velocity::Linear::kI,
-                                    Regulators::Velocity::Linear::MIN_INT,
-                                    Regulators::Velocity::Linear::MAX_INT, dt } },
-      m_anglularVelocityController{ { Regulators::Velocity::Angular::kS },
-                                    { Regulators::Velocity::Angular::kV },
-                                    { Regulators::Velocity::Angular::kA,
-                                      Regulators::Velocity::Angular::FILTER_ALPHA, dt },
-                                    { Regulators::Velocity::Angular::kP },
-                                    { Regulators::Velocity::Angular::kI,
-                                      Regulators::Velocity::Angular::MIN_INT,
-                                      Regulators::Velocity::Angular::MAX_INT, dt } } {}
+VelocityRegulator::VelocityRegulator(float dt) :
+    m_linearVelocityController{
+        { Regulators::Velocity::Linear::kS },
+        { Regulators::Velocity::Linear::kV },
+        { Regulators::Velocity::Linear::kA, Regulators::Velocity::Linear::FILTER_ALPHA, dt },
+        { Regulators::Velocity::Linear::kP },
+        { Regulators::Velocity::Linear::kI, Regulators::Velocity::Linear::MIN_INT,
+          Regulators::Velocity::Linear::MAX_INT, dt }
+    },
+    m_anglularVelocityController{
+        { Regulators::Velocity::Angular::kS },
+        { Regulators::Velocity::Angular::kV },
+        { Regulators::Velocity::Angular::kA, Regulators::Velocity::Angular::FILTER_ALPHA, dt },
+        { Regulators::Velocity::Angular::kP },
+        { Regulators::Velocity::Angular::kI, Regulators::Velocity::Angular::MIN_INT,
+          Regulators::Velocity::Angular::MAX_INT, dt }
+    },
+    m_linearVelocityOutputFilter{ Regulators::Velocity::Linear::OUTPUT_FILTER_CUTOFF_FREQ, dt } {}
 
 Vec2 VelocityRegulator::update(Vec2 const& currentVelocity, Radians currentAngle,
                                float currentAngularVelocity, float batteryVoltage) {
@@ -33,6 +34,8 @@ Vec2 VelocityRegulator::update(Vec2 const& currentVelocity, Radians currentAngle
         m_linearVelocitySetpointFilter.update(m_targetLinearVelocity);
     float const linearVelocityTargetVoltage = m_linearVelocityController.update(
         filteredTargetLinearVelocity, currentLinearVelocity);
+    float const filteredLinearVelocityTargetVoltage =
+        m_linearVelocityOutputFilter.update(linearVelocityTargetVoltage);
 
     float const filteredTargetAngularVelocity =
         m_angularVelocitySetpointFilter.update(m_targetAngularVelocity);
@@ -41,8 +44,9 @@ Vec2 VelocityRegulator::update(Vec2 const& currentVelocity, Radians currentAngle
 
     float const linearVelocityVoltageBudget = batteryVoltage *
                                               Regulators::Velocity::LINEAR_VELOCITY_VOLTAGE_BUDGET;
-    float const linearVelocityVoltage = std::clamp(
-        linearVelocityTargetVoltage, -linearVelocityVoltageBudget, linearVelocityVoltageBudget);
+    float const linearVelocityVoltage = std::clamp(filteredLinearVelocityTargetVoltage,
+                                                   -linearVelocityVoltageBudget,
+                                                   linearVelocityVoltageBudget);
 
     float const angularVelocityVoltageBudget = batteryVoltage - linearVelocityVoltage;
     float const angularVelocityControlVoltage = std::clamp(anglularVelocityControlTargetVoltage,

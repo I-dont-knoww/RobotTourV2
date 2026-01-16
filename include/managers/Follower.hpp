@@ -40,41 +40,32 @@ public:
         if (m_finished) return { 0.0f, 0.0f };
 
         if (m_mode == movement)
-            return m_straightManager.update(state.position, state.angle,
-                                            currentTime);
+            return m_straightManager.update(state.position, state.angle, currentTime);
         else if (m_mode == rotation) return m_rotationManager.update(state.angle);
         else return { 0.0f, 0.0f };
     }
 
 private:
     void setupMovement(Vec2 const& currentPosition) {
-        Path const& path = m_path[m_index];
-        uint const flags = path.flags;
-        float const targetTime = m_targetTimes[m_index];
+        Vec2 const& startPosition = m_index == 0u ? Vec2{ 0.0f, 0.0f }
+                                                  : m_path[m_index - 1].position;
 
-        Vec2 const& previousPathPosition = (m_index == 0u) ? Vec2{ 0.0f, 0.0f }
-                                                           : m_path[m_index - 1u].position;
-        float turnAngle{};
-        if (m_index == m_path.size() - 1u) turnAngle = 0.0f;
-        else {
-            Vec2 const& nextPathPosition = m_path[m_index + 1u].position;
-
-            Vec2 const currentDirection = path.position - previousPathPosition;
-            Vec2 const previousDirection = nextPathPosition - path.position;
-
-            turnAngle = std::acosf(Vec2::dot(currentDirection, previousDirection) /
-                                   (currentDirection.length() * previousDirection.length()));
-        }
+        Straight::Movement const currentMovement{ m_path[m_index], m_targetTimes[m_index] };
+        auto const nextMovement = m_index < m_path.size() - 1u
+                                      ? std::make_optional<Straight::Movement>(
+                                            m_path[m_index + 1], m_targetTimes[m_index + 1])
+                                      : std::nullopt;
 
         float distanceThreshold = Manager::Follower::TURNING_RADIUS;
-        if (flags & Path::ACCURATE)
+        if (currentMovement.path.flags & Path::ACCURATE)
             distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_ACCURATE;
-        else if (flags & Path::STOP) distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_FAST;
+        else if (currentMovement.path.flags & Path::STOP)
+            distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_FAST;
 
-        m_straightManager.set(previousPathPosition, path.position, targetTime, distanceThreshold,
-                              turnAngle, flags & Path::REVERSE, flags & Path::STOP);
-        m_exitCondition.set({ { currentPosition, path.position, distanceThreshold } },
-                            std::nullopt);
+        m_straightManager.set(startPosition, currentMovement, nextMovement, distanceThreshold);
+        m_exitCondition.set(
+            { { currentPosition, currentMovement.path.position, distanceThreshold } },
+            std::nullopt);
 
         m_mode = movement;
     }
