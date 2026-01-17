@@ -1,4 +1,5 @@
 // https://www.elbeno.com/blog/?p=1211
+// https://mazzo.li/posts/vectorized-atan2.html
 
 #pragma once
 
@@ -20,6 +21,8 @@ namespace VectorHelper {
     }
 
     namespace Atan {
+        constexpr float abs(float x) { return x > 0.0f ? x : -x; }
+
         constexpr float term(float x, int k) {
             return (2.0f * static_cast<float>(k) * x) /
                    ((2.0f * static_cast<float>(k) + 1.0f) * (1.0f + x));
@@ -39,12 +42,21 @@ namespace VectorHelper {
     constexpr float constexprAtan(float x) { return x / (1.0f + x * x) * Atan::sum(x, 1.0f, 1); }
 
     constexpr float constexprAtan2(float y, float x) {
-        if (x > 0.0f) return constexprAtan(y / x);
-        if (x < 0.0f && y >= 0.0f) return constexprAtan(y / x) + std::numbers::pi_v<float>;
-        if (x < 0.0f && y < 0.0f) return constexprAtan(y / x) - std::numbers::pi_v<float>;
-        if (x == 0.0f && y > 0.0f) return std::numbers::pi_v<float> / 2.0f;
-        if (x == 0.0f && y < 0.0f) return -std::numbers::pi_v<float> / 2.0f;
-        return 0.0f;
+        static constexpr float PI = std::numbers::pi_v<float>;
+
+        if (x == 0.0f && y > 0.0f) return PI / 2.0f;
+        if (x == 0.0f && y < 0.0f) return -PI / 2.0f;
+        if (x == 0.0f && y == 0.0f) return 0.0f;
+
+        bool const swap = Atan::abs(x) < Atan::abs(y);
+        float const atanInput = (swap ? x : y) / (swap ? y : x);
+
+        float result = constexprAtan(atanInput);
+        if (swap) result = (atanInput >= 0.0f ? PI / 2.0f : -PI / 2.0f) - result;
+
+        if (x >= 0.0f) return result;
+        if (x < 0.0f && y >= 0.0f) return result + PI;
+        if (x < 0.0f && y < 0.0f) return result - PI;
     }
 }
 
