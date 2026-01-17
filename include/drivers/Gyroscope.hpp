@@ -158,8 +158,7 @@ private:
         OFFSET_USER8 = 0x7f,
     };
 
-    spi_inst_t* setupRegisterReadWrite(uint csPin, uint sckPin, uint misoPin, uint mosiPin,
-                                       uint intPin) const;
+    spi_inst_t* setupRegisterReadWrite(uint csPin, uint sckPin, uint misoPin, uint mosiPin) const;
     void setupRegisters(spi_inst_t* spi, uint csPin) const;
 
     void getBias(spi_inst_t* spi, uint csPin);
@@ -169,7 +168,7 @@ private:
     void setupPIORead(PIO pio, uint csPin, uint sckPin, uint misoPin, uint mosiPin, uint intPin);
 
     template <typename TBank>
-    void selectBank(spi_inst_t* spi, uint csPin, TBank reg) const {
+    void selectBank(spi_inst_t* spi, uint csPin, TBank) const {
         uint8_t bank{};
 
         if constexpr (std::is_same_v<TBank, Bank0>) bank = 0u;

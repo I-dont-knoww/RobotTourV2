@@ -29,7 +29,7 @@ loop2:                       ; loop runs at a period of 80 ns
 #include "hardware/clocks.h"
 
 static inline void encoders_program_init(PIO pio, uint sm, uint offset, uint csLeft, uint csRight, uint sck, uint miso) {
-    float clkdiv = clock_get_hz(clk_sys) * 20e-9f; // clkdiv for 20 ns period
+    float clkdiv = static_cast<float>(clock_get_hz(clk_sys)) * 20e-9f; // clkdiv for 20 ns period
 
     pio_sm_config config = encoders_program_get_default_config(offset);
     sm_config_set_in_pin_base(&config, miso);

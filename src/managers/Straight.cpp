@@ -61,9 +61,25 @@ float getSlowdownSpeed(std::optional<float> finalSpeed, float distanceLeft, floa
            *finalSpeed;
 }
 
-std::optional<float> getTargetSpeed(float distanceLeft, float targetTime, float currentTime) {
+std::optional<float> getTargetSpeed(float targetTime, float currentTime, float distanceLeft,
+                                    std::optional<float> finalSpeed) {
+    using Manager::Straight::slowdownKh;
+    using Manager::Straight::slowdownKp;
+    using Manager::Straight::slowdownKs;
+
     if (targetTime <= currentTime) return std::nullopt;
-    return distanceLeft / (targetTime - currentTime);
+    if (!finalSpeed) return std::nullopt;
+
+    float const timeLeft = targetTime - currentTime;
+    float const speed = distanceLeft / timeLeft;
+
+    static constexpr float alpha = 1.0f / (slowdownKp * slowdownKp * slowdownKh);
+    float const baseSpeed = slowdownKs + *finalSpeed;
+    float const correctedTimeLeft =
+        timeLeft - alpha * (speed - baseSpeed - baseSpeed * std::logf(speed / baseSpeed));
+
+    if (correctedTimeLeft <= 0.0f) return std::nullopt;
+    else return distanceLeft / correctedTimeLeft;
 }
 
 float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool reverse) {
@@ -116,8 +132,7 @@ void Straight::set(Vec2 const& startPosition, Vec2 const& targetPosition, float 
     m_reverse = reverse;
 }
 
-Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float angularVelocity,
-                      float currentTime) {
+Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float currentTime) {
     float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
     float const headingErrorSpeed = m_headingController.update(0.0f, headingError);
     float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
@@ -128,7 +143,7 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float a
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
     float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
-    auto const targetSpeed = getTargetSpeed(distanceLeft, m_targetTime, currentTime);
+    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_finalSpeed);
     float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
 
     return limitSpeeds(linearSpeed, angularSpeed);

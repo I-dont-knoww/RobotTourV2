@@ -59,7 +59,7 @@ regaddressloop:
 #include "hardware/gpio.h"
 
 static inline void compass_program_init(PIO pio, uint sm, uint offset, uint sda, uint scl) {
-    float clkdiv = clock_get_hz(clk_sys) * 325.0e-9f;
+    float clkdiv = static_cast<float>(clock_get_hz(clk_sys)) * 325.0e-9f;
 
     pio_sm_config config = compass_program_get_default_config(offset);
     sm_config_set_in_pin_base(&config, sda);

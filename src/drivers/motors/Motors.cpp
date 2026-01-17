@@ -34,18 +34,21 @@ Motors::Controller::Controller(uint in1Pin, uint in2Pin)
 }
 
 void Motors::Controller::spin(int power) {
-    m_power = std::clamp(power, -static_cast<int>(Drivers::Motors::MAX_POWER),
-                         static_cast<int>(Drivers::Motors::MAX_POWER));
+    using Drivers::Motors::MAX_POWER;
+
+    m_power = std::clamp(power, -static_cast<int>(MAX_POWER), static_cast<int>(MAX_POWER));
 
     if (m_power > 0) {
-        pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER);
-        pwm_set_chan_level(m_in2Slice, m_in2Channel, Drivers::Motors::MAX_POWER - m_power);
+        pwm_set_chan_level(m_in1Slice, m_in1Channel, MAX_POWER);
+        pwm_set_chan_level(m_in2Slice, m_in2Channel,
+                           static_cast<uint16_t>(static_cast<int>(MAX_POWER) - m_power));
     } else if (m_power < 0) {
-        pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER + m_power);
-        pwm_set_chan_level(m_in2Slice, m_in2Channel, Drivers::Motors::MAX_POWER);
+        pwm_set_chan_level(m_in1Slice, m_in1Channel,
+                           static_cast<uint16_t>(static_cast<int>(MAX_POWER) + m_power));
+        pwm_set_chan_level(m_in2Slice, m_in2Channel, MAX_POWER);
     } else {
-        pwm_set_chan_level(m_in1Slice, m_in1Channel, Drivers::Motors::MAX_POWER);
-        pwm_set_chan_level(m_in2Slice, m_in2Channel, Drivers::Motors::MAX_POWER);
+        pwm_set_chan_level(m_in1Slice, m_in1Channel, MAX_POWER);
+        pwm_set_chan_level(m_in2Slice, m_in2Channel, MAX_POWER);
     }
 }
 

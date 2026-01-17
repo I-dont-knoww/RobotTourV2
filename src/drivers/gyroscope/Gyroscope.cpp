@@ -19,7 +19,7 @@
 
 Gyroscope::Gyroscope(PIO pio, uint csPin, uint sckPin, uint misoPin, uint mosiPin, uint intPin)
     : m_rawDataPtr{ reinterpret_cast<uint32_t>(&m_rawData[0]) } {
-    spi_inst_t* spi = setupRegisterReadWrite(csPin, sckPin, misoPin, mosiPin, intPin);
+    spi_inst_t* spi = setupRegisterReadWrite(csPin, sckPin, misoPin, mosiPin);
     setupRegisters(spi, csPin);
 
     getBias(spi, csPin);
@@ -29,8 +29,8 @@ Gyroscope::Gyroscope(PIO pio, uint csPin, uint sckPin, uint misoPin, uint mosiPi
     setupPIORead(pio, csPin, sckPin, misoPin, mosiPin, intPin);
 }
 
-spi_inst_t* Gyroscope::setupRegisterReadWrite(uint csPin, uint sckPin, uint misoPin, uint mosiPin,
-                                              uint intPin) const {
+spi_inst_t* Gyroscope::setupRegisterReadWrite(uint csPin, uint sckPin, uint misoPin,
+                                              uint mosiPin) const {
     spi_inst_t* spi = SPI_INSTANCE(sckPin == 10u || sckPin == 14u || sckPin == 26u);
 
     spi_init(spi, 24'000'000);
@@ -112,9 +112,9 @@ void Gyroscope::endSetup(spi_inst_t* spi) const { spi_deinit(spi); }
 
 void Gyroscope::setupPIORead(PIO pio, uint csPin, uint sckPin, uint misoPin, uint mosiPin,
                              uint intPin) {
-    uint sm = pio_claim_unused_sm(pio, true);
+    uint const sm = pio_claim_unused_sm(pio, true);
 
-    uint offset = pio_add_program(pio, &gyroscope_program);
+    uint const offset = pio_add_program(pio, &gyroscope_program);
     gyroscope_program_init(pio, sm, offset, csPin, sckPin, misoPin, mosiPin, intPin);
 
     uint const dmaReadDataChannel = dma_claim_unused_channel(true);
