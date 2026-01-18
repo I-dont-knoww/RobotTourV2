@@ -34,6 +34,8 @@ private:
     Controller<SController, VController, AController, PController, IController>
         m_anglularVelocityController;
 
+    RCFilter m_linearVelocityOutputFilter;
+
     LagFilter m_linearVelocitySetpointFilter{ Regulators::Velocity::Linear::LAG_FILTER_K };
     LagFilter m_angularVelocitySetpointFilter{ Regulators::Velocity::Angular::LAG_FILTER_K };
 
