@@ -53,6 +53,7 @@ void core0() {
 
     CurrentRegulator currentRegulator{};
     VelocityRegulator velocityRegulator{ Integration::SLOW_LOOP_DT };
+    Follower follower{ Competition::PATH, Competition::TARGET_TIMES, Integration::SLOW_LOOP_DT };
     
     core0Status = INITIALIZED;
     while (core1Status < INITIALIZED) tight_loop_contents();
@@ -79,8 +80,6 @@ void core0() {
     time.reset();
 
     core0Status = RUNNING;
-
-    Follower follower{ Competition::PATH, Competition::TARGET_TIMES, Integration::SLOW_LOOP_DT };
 
     auto core0Loop = [&]() {
         auto const state = atomicForwardKinematicsState.load(std::memory_order_relaxed);

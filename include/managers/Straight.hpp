@@ -38,7 +38,7 @@ private:
     Controller<PController, DController> m_headingController;
     Controller<PController, DController> m_linearController;
 
-    RCFilter m_centripetalFilter;
+    RCFilter m_angularSpeedFilter;
 
     Vec2 m_startPosition{};
     Vec2 m_targetPosition{};

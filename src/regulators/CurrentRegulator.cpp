@@ -27,7 +27,7 @@ std::array<std::optional<float>, SCALE_VALUE_COUNT> getScaleValues(Vec2 const& m
 }
 
 auto getScaledVectors(std::array<std::optional<float>, SCALE_VALUE_COUNT> const& scaleValues,
-                     Vec2 const& targets) {
+                      Vec2 const& targets) {
     std::array<std::optional<Vec2>, SCALE_VALUE_COUNT> scaledVectors{};
     for (size_t i = 0; i < scaledVectors.size(); ++i)
         scaledVectors[i] = scaleValues[i].transform([&](float x) { return targets * x; });
@@ -40,19 +40,19 @@ Vec2 scale(Vec2 const& mins, Vec2 const& maxes, Vec2 const& targets) {
 
     std::optional<size_t> scaleIndex{};
     for (size_t i = 0; i < scaleValues.size(); ++i) {
-        if (!scaledVectors[i].has_value()) continue;
+        if (!scaledVectors[i]) continue;
         Vec2 const& scaledVector = *scaledVectors[i];
 
         if (scaledVector.x < mins.x || scaledVector.x > maxes.x || scaledVector.y < mins.y ||
             scaledVector.y > maxes.y)
             continue;
 
-        if (!scaleIndex.has_value() ||
+        if (!scaleIndex ||
             std::fabsf(*scaleValues[i] - 1.0f) < std::fabsf(*scaleValues[*scaleIndex] - 1.0f))
             scaleIndex = i;
     }
 
-    if (!scaleIndex.has_value())
+    if (!scaleIndex)
         return Vec2::transform(
             [](float voltage, float min, float max) { return std::clamp(voltage, min, max); },
             targets, mins, maxes);

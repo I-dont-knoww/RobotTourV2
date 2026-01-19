@@ -167,7 +167,7 @@ namespace Compiler {
             for (size_t i = 0; i < N; ++i) {
                 Vec2 const& currentPosition = path[i].position;
 
-                if (!commands[i].targetTime.has_value())
+                if (!commands[i].targetTime)
                     totalLength += (currentPosition - previousPosition).length();
 
                 previousPosition = currentPosition;
@@ -211,8 +211,7 @@ namespace Compiler {
         constexpr float getTotalForcedTargetTime(std::array<Command, N> const& commands) {
             float totalForcedTargetTime = 0.0f;
             for (size_t i = 0; i < N; ++i)
-                if (commands[i].targetTime.has_value())
-                    totalForcedTargetTime += commands[i].targetTime.value();
+                if (commands[i].targetTime) totalForcedTargetTime += commands[i].targetTime.value();
             return totalForcedTargetTime;
         }
     }

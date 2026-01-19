@@ -65,8 +65,8 @@ namespace Drivers {
 
 namespace Integration {
     inline constexpr float TARGET_FAST_LOOP_HZ = 32.0e3f;
-    // inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
-    inline constexpr float TARGET_SLOW_LOOP_HZ = 2.0e3f;
+    inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
+    // inline constexpr float TARGET_SLOW_LOOP_HZ = 2.0e3f;
 
     inline constexpr float CALIBRATION_DELAY = 1.0f;
     inline constexpr float FINAL_STATE_MEASUREMENT_DELAY = 1.0f;
@@ -85,7 +85,7 @@ namespace Kinematics {
     namespace Forward {
         inline constexpr size_t MA_FILTER_LENGTH = 50u;
 
-        inline constexpr float VELOCITY_CUTOFF_FREQUENCY = 10.0f;
+        inline constexpr float VELOCITY_CUTOFF_FREQUENCY = 50.0f;
         inline constexpr float WHEEL_SPEED_CUTOFF_FREQUENCY = 100.0f;
     }
 
@@ -104,9 +104,8 @@ namespace Manager {
     }
 
     namespace Straight {
-        inline constexpr float slowdownKp = 11.0f;
-        inline constexpr float slowdownKh = 0.5f;
-        inline constexpr float slowdownKs = 4.0f;
+        inline constexpr float SLOWDOWN_ACCEL = 40.0f;
+        inline constexpr float SLOWDOWN_MIN_SPEED = 4.0f;
 
         inline constexpr float angularKp = 20.0f;
         inline constexpr float angularKd = 0.2f;
@@ -116,9 +115,9 @@ namespace Manager {
         inline constexpr float LINEAR_CONTROL_AUTHORITY = 0.3f;
 
         inline constexpr float FILTER_ALPHA = 1.0f;
-        inline constexpr float CENTRIPETAL_FILTER_CUTOFF = 500.0f;
+        inline constexpr float CENTRIPETAL_FILTER_CUTOFF = 25.0f;
 
-        inline constexpr float MAX_CENTRIPETAL = 120.0f;
+        inline constexpr float MAX_CENTRIPETAL = 60.0f;
         inline constexpr float TURN_ANGULAR_SPEED = 3.5f;
         inline constexpr float MAX_LINEAR_SPEED = 500.0f;
     }
@@ -208,7 +207,6 @@ namespace Regulators {
 
             inline constexpr float FILTER_ALPHA = 1.0f;
             inline constexpr float LAG_FILTER_K = 0.05f;
-            inline constexpr float OUTPUT_FILTER_CUTOFF_FREQ = 75.0f;
         }
 
         namespace Angular {

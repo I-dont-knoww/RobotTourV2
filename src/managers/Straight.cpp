@@ -1,8 +1,3 @@
-// two solutions?
-
-// switch back to linear
-// switch to using angular controller to limit centripetal
-
 #include "managers/Straight.hpp"
 
 #include "Constants.hpp"
@@ -18,7 +13,7 @@ Straight::Straight(float dt) :
                          { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
     m_linearController{ { Manager::Straight::linearKp },
                         { Manager::Straight::linearKd, Manager::Straight::FILTER_ALPHA, dt } },
-    m_centripetalFilter{ Manager::Straight::CENTRIPETAL_FILTER_CUTOFF, dt } {}
+    m_angularSpeedFilter{ Manager::Straight::CENTRIPETAL_FILTER_CUTOFF, dt } {}
 
 static float getHeadingError(Radians targetAngle, Radians currentAngle, bool reverse) {
     Radians headingError = currentAngle - targetAngle;
@@ -58,58 +53,55 @@ static float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosi
 static float getSlowdownSpeed(std::optional<float> finalSpeed, float distanceLeft,
                               float stoppingRadius) {
     using Manager::Straight::MAX_LINEAR_SPEED;
-    using Manager::Straight::slowdownKh;
-    using Manager::Straight::slowdownKp;
-    using Manager::Straight::slowdownKs;
+    using Manager::Straight::SLOWDOWN_ACCEL;
 
-    if (!finalSpeed.has_value()) return MAX_LINEAR_SPEED;
+    if (!finalSpeed) return MAX_LINEAR_SPEED;
 
-    return slowdownKp * std::sqrtf(slowdownKh * (distanceLeft - stoppingRadius)) + slowdownKs +
-           *finalSpeed;
+    float const slowdownSpeedSquared = *finalSpeed * *finalSpeed +
+                                       2.0f * SLOWDOWN_ACCEL * (distanceLeft - stoppingRadius);
+
+    if (slowdownSpeedSquared <= 0.0f) return *finalSpeed;
+    else return std::sqrtf(slowdownSpeedSquared);
 }
 
 static std::optional<float> getTargetSpeed(float targetTime, float currentTime, float distanceLeft,
                                            std::optional<float> finalSpeed) {
-    using Manager::Straight::slowdownKh;
-    using Manager::Straight::slowdownKp;
-    using Manager::Straight::slowdownKs;
+    using Manager::Straight::MAX_LINEAR_SPEED;
+    using Manager::Straight::SLOWDOWN_ACCEL;
 
-    if (targetTime <= currentTime) return std::nullopt;
     if (!finalSpeed) return std::nullopt;
 
     float const timeLeft = targetTime - currentTime;
-    float const speed = distanceLeft / timeLeft;
+    if (timeLeft <= 0.0f) return std::nullopt;
+    if (distanceLeft / timeLeft <= *finalSpeed) return distanceLeft / timeLeft;
 
-    static constexpr float alpha = 1.0f / (slowdownKp * slowdownKp * slowdownKh);
-    float const baseSpeed = slowdownKs + *finalSpeed;
-    float const correctedTimeLeft =
-        timeLeft - alpha * (speed - baseSpeed - baseSpeed * std::logf(speed / baseSpeed));
-
-    if (correctedTimeLeft <= 0.0f) return std::nullopt;
-    else return distanceLeft / correctedTimeLeft;
+    float const determinant = SLOWDOWN_ACCEL * SLOWDOWN_ACCEL * timeLeft * timeLeft +
+                              2.0f * SLOWDOWN_ACCEL * (*finalSpeed * timeLeft - distanceLeft);
+    if (determinant <= 0.0f) return std::nullopt;
+    else return *finalSpeed + SLOWDOWN_ACCEL * timeLeft - std::sqrtf(determinant);
 }
 
 float Straight::getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed,
                                bool reverse) {
     float linearSpeed;
-    if (!targetSpeed.has_value()) linearSpeed = slowdownSpeed;
+    if (!targetSpeed) linearSpeed = slowdownSpeed;
     else linearSpeed = std::min(*targetSpeed, slowdownSpeed);
 
     return (reverse ? -1.0f : 1.0f) * linearSpeed;
 }
 
 Vec2 Straight::limitSpeeds(float linearSpeed, float angularSpeed) {
+    using Chassis::MASS;
     using Manager::Straight::MAX_CENTRIPETAL;
     using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::TURN_ANGULAR_SPEED;
 
     angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
+    float const filteredAngularSpeed = m_angularSpeedFilter.update(angularSpeed);
 
     if (angularSpeed != 0.0f) {
-        float const maxLinearSpeed = MAX_CENTRIPETAL / std::fabsf(angularSpeed);
-        float const filteredMaxLinearSpeed = std::min(MAX_LINEAR_SPEED,
-                                                      m_centripetalFilter.update(maxLinearSpeed));
-        linearSpeed = std::clamp(linearSpeed, -filteredMaxLinearSpeed, filteredMaxLinearSpeed);
+        float const maxLinearSpeed = MAX_CENTRIPETAL / std::fabsf(filteredAngularSpeed) / MASS;
+        linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
     }
 
     return { linearSpeed, angularSpeed };
@@ -135,8 +127,9 @@ static std::optional<float> getFinalSpeed(std::optional<Straight::Movement> cons
     using Manager::Follower::TURNING_RADIUS;
     using Manager::Straight::MAX_CENTRIPETAL;
     using Manager::Straight::MAX_LINEAR_SPEED;
+    using Manager::Straight::SLOWDOWN_MIN_SPEED;
 
-    if (currentMovement.path.flags & Path::STOP || !nextMovement) return 0.0f;
+    if (currentMovement.path.flags & Path::STOP || !nextMovement) return SLOWDOWN_MIN_SPEED;
     else if (turnAngle == 0.0f) return MAX_LINEAR_SPEED;
     else {
         float const turnRadius = TURNING_RADIUS *
@@ -149,9 +142,9 @@ static std::optional<float> getFinalSpeed(std::optional<Straight::Movement> cons
                                         ? getSlowdownSpeed(0.0f, nextTravelLength,
                                                            DISTANCE_THRESHOLD_ACCURATE)
                                         : MAX_LINEAR_SPEED;
-        float const nextSpeed = nextMovement->targetTime != 0.0f
-                                    ? nextTravelLength / nextMovement->targetTime
-                                    : MAX_LINEAR_SPEED;
+        float const nextTargetTime = nextMovement->targetTime - currentMovement.targetTime;
+        float const nextSpeed = nextTargetTime != 0.0f ? nextTravelLength / nextTargetTime
+                                                       : MAX_LINEAR_SPEED;
 
         return std::min({ maxTurnSpeed, slowdownSpeed, nextSpeed, MAX_LINEAR_SPEED });
     }
