@@ -100,7 +100,7 @@ namespace Manager {
         inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
         inline constexpr float TURNING_RADIUS = 20.0f;
 
-        inline constexpr float ANGLE_THRESHOLD = 0.05f;
+        inline constexpr float ANGLE_THRESHOLD = 0.01f;
     }
 
     namespace Straight {
@@ -123,8 +123,8 @@ namespace Manager {
     }
 
     namespace Rotation {
-        inline constexpr float kS = 2.0f;
-        inline constexpr float kP = 3.5f;
+        inline constexpr float kS = 1.0f;
+        inline constexpr float kP = 3.0f;
 
         inline constexpr float GRABBING_SPEED = 2.0f;
 

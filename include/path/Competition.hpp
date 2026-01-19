@@ -7,6 +7,11 @@
 
 #include <array>
 
+// are you on the right branch?
+// did you set the FAIL_RUN variable?
+// did you set the target time?
+// did you check the destination?
+
 namespace Competition {
     using namespace Compiler::Tokens;
 
