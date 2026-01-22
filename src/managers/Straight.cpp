@@ -99,9 +99,11 @@ Vec2 Straight::limitSpeeds(float linearSpeed, float angularSpeed) {
     angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
     float const filteredAngularSpeed = m_angularSpeedFilter.update(angularSpeed);
 
-    if (angularSpeed != 0.0f) {
-        float const maxLinearSpeed = MAX_CENTRIPETAL / std::fabsf(filteredAngularSpeed) / MASS;
-        linearSpeed = std::clamp(linearSpeed, -maxLinearSpeed, maxLinearSpeed);
+    float const currentCentripetal = std::fabsf(MASS * linearSpeed * filteredAngularSpeed);
+    if (currentCentripetal > MAX_CENTRIPETAL) {
+        float const centripetalFactorRooted = std::sqrtf(MAX_CENTRIPETAL / currentCentripetal);
+        linearSpeed *= centripetalFactorRooted;
+        angularSpeed *= centripetalFactorRooted;
     }
 
     return { linearSpeed, angularSpeed };

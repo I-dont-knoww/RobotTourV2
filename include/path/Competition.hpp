@@ -11,6 +11,7 @@
 // did you set the FAIL_RUN variable?
 // did you set the target time?
 // did you check the destination?
+// is the path rotated the right way in your mind?
 
 namespace Competition {
     using namespace Compiler::Tokens;
