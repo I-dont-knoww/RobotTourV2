@@ -117,7 +117,9 @@ namespace Compiler {
             Command newCommand = command;
 
             float length = command.amount.length() * newCommand.units;
-            float const scale = (length - DOWEL_DISTANCE) / length;
+            float scale{};
+            if (command.flags & Path::REVERSE) scale = (length + DOWEL_DISTANCE) / length;
+            else scale = (length - DOWEL_DISTANCE) / length;
 
             newCommand.amount *= scale;
             return newCommand;
