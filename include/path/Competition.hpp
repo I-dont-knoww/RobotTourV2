@@ -11,20 +11,18 @@
 // did you set the FAIL_RUN variable?
 // did you set the target time?
 // did you check the destination?
+// is the path rotated the right way in your mind?
 
 namespace Competition {
     using namespace Compiler::Tokens;
 
     inline constexpr bool FAIL_RUN = false;
-    inline constexpr float TARGET_TIME = 5.0f;
+    inline constexpr float TARGET_TIME = 70.0f;
 
     inline constexpr auto COMMANDS = std::to_array<Compiler::Command>({
         // clang-format off
 
-        moveby(UP),
-        moveby(LEFT),
-        moveby(DOWN),
-        moveby(RIGHT)
+        moveby(UP)
 
         // clang-format on
     });

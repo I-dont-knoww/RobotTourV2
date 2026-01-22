@@ -51,6 +51,10 @@ void core0() {
     Button button{ Pins::BUTTON };
     LedRGB ledRGB{ Pins::LedRGB::RED, Pins::LedRGB::GREEN, Pins::LedRGB::BLUE };
 
+    Motors motors{ Pins::Motors::LEFT_MOTOR_IN1,     Pins::Motors::LEFT_MOTOR_IN2,
+                   Pins::Motors::RIGHT_MOTOR_IN1,    Pins::Motors::RIGHT_MOTOR_IN2,
+                   Pins::Motors::LEFT_MOTOR_CURRENT, Pins::Motors::RIGHT_MOTOR_CURRENT };
+
     CurrentRegulator currentRegulator{};
     VelocityRegulator velocityRegulator{ Integration::SLOW_LOOP_DT };
     Follower follower{ Competition::PATH, Competition::TARGET_TIMES, Integration::SLOW_LOOP_DT };
@@ -64,9 +68,6 @@ void core0() {
     core0Status = CALIBRATING;
 
     Battery battery{ Pins::Battery::VOLTAGE_SENSE };
-    Motors motors{ Pins::Motors::LEFT_MOTOR_IN1,     Pins::Motors::LEFT_MOTOR_IN2,
-                   Pins::Motors::RIGHT_MOTOR_IN1,    Pins::Motors::RIGHT_MOTOR_IN2,
-                   Pins::Motors::LEFT_MOTOR_CURRENT, Pins::Motors::RIGHT_MOTOR_CURRENT };
 
     core0Status = CALIBRATED;
     while (core1Status < CALIBRATED) tight_loop_contents();
