@@ -1,6 +1,9 @@
 #pragma once
 
-#include "path/Compiler.hpp"
+#include "command/Command.hpp"
+#include "command/Tokens.hpp"
+
+#include "path/Accumulate.hpp"
 #include "path/Path.hpp"
 
 #include "state/Vector.hpp"
@@ -14,12 +17,12 @@
 // is the path rotated the right way in your mind?
 
 namespace Competition {
-    using namespace Compiler::Tokens;
+    using namespace Command::Tokens;
 
     inline constexpr bool FAIL_RUN = false;
     inline constexpr float TARGET_TIME = 5.0f;
 
-    inline constexpr auto COMMANDS = std::to_array<Compiler::Command>({
+    inline constexpr auto COMMANDS = std::to_array<Command::Command>({
         // clang-format off
 
         moveby(UP),
@@ -30,8 +33,5 @@ namespace Competition {
         // clang-format on
     });
 
-    inline constexpr auto PATH = Compiler::compile(COMMANDS);
-    inline constexpr auto TARGET_TIMES = Compiler::getTargetTimes(COMMANDS, PATH, TARGET_TIME);
-    inline constexpr auto TURN_TIMES = Compiler::TargetTime::getTurnTimes(PATH);
-    inline constexpr Vec2 DESTINATION = Compiler::getDestination(PATH) / SQUARE_SIZE;
+    inline constexpr auto PATH = Path::accumulate(COMMANDS);
 }

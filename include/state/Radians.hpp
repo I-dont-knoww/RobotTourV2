@@ -7,7 +7,7 @@
 #include <cmath>
 #include <limits>
 
-namespace RadianHelper {
+namespace RadianDetail {
     constexpr float ipow(float x, int n) {
         if (n == 0) return 1.0f;
         else if (n == 1) return x;
@@ -152,7 +152,7 @@ private:
     constexpr void squish() { m_angle = squish(m_angle); }
     static constexpr float squish(float rad) {
         if consteval {
-            return RadianHelper::remainder(rad, 2.0f * Constants::PI);
+            return RadianDetail::remainder(rad, 2.0f * Constants::PI);
         } else {
             return std::remainderf(rad, 2.0f * Constants::PI);
         }

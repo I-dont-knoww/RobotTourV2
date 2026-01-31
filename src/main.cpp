@@ -1,4 +1,5 @@
 #include "Constants.hpp"
+#include "Competition.hpp"
 
 #include "drivers/Battery.hpp"
 #include "drivers/Button.hpp"
@@ -16,8 +17,6 @@
 #include "kinematics/ForwardKinematics.hpp"
 
 #include "managers/Follower.hpp"
-
-#include "path/Competition.hpp"
 
 #include "regulators/CurrentRegulator.hpp"
 #include "regulators/VelocityRegulator.hpp"

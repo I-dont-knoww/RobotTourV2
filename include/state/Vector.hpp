@@ -9,7 +9,7 @@
 #include <numbers>
 #include <utility>
 
-namespace VectorHelper {
+namespace VectorDetail {
     constexpr float sqrtNewtonRaphson(float x, float current, float previous) {
         if (current == previous) return current;
         else return sqrtNewtonRaphson(x, 0.5f * (current + (x / current)), current);
@@ -128,14 +128,14 @@ struct Vec2 {
     constexpr float lengthSquared() const { return x * x + y * y; }
     constexpr float length() const {
         if consteval {
-            return VectorHelper::constexprSqrt(lengthSquared());
+            return VectorDetail::constexprSqrt(lengthSquared());
         } else {
             return std::sqrtf(lengthSquared());
         }
     }
     constexpr float angle() const {
         if consteval {
-            return VectorHelper::constexprAtan2(y, x);
+            return VectorDetail::constexprAtan2(y, x);
         } else {
             return std::atan2f(y, x);
         }
@@ -228,7 +228,7 @@ struct Vec3 {
     constexpr float lengthSquared() const { return x * x + y * y + z * z; }
     constexpr float length() const {
         if consteval {
-            return VectorHelper::constexprSqrt(lengthSquared());
+            return VectorDetail::constexprSqrt(lengthSquared());
         } else {
             return std::sqrtf(lengthSquared());
         }
