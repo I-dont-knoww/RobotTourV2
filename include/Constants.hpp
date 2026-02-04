@@ -244,4 +244,11 @@ namespace Track {
 
     inline constexpr float FAILED_RUN_DELAY = 2.5f;
     inline constexpr float FAILED_RUN_MOTOR_SPEED = 0.1f;
+
+    inline constexpr float PATH_SPACING = 2.0f;
+    inline constexpr ptrdiff_t MOVING_AVERAGE_WIDTH = 20;
+
+    inline constexpr float CURVATURE_SLOWDOWN = 2.0f;
+    inline constexpr float MAX_VELOCITY = 500.0f;
+    inline constexpr float MAX_ACCELERATION = 20.0f;
 }

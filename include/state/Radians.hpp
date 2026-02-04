@@ -41,7 +41,7 @@ namespace RadianDetail {
     }
 
     constexpr float floor(float x) {
-        if (x < 0.0f) return -ceil(-x);
+        if (x < 0.0f) return static_cast<float>(-ceil(-x));
         else return floorHelper1(x, 0.0f, ipow(2.0f, std::numeric_limits<float>::max_exponent - 1));
     }
 

@@ -3,6 +3,8 @@
 #include "command/Command.hpp"
 #include "command/Tokens.hpp"
 
+#include "course/Compiler.hpp"
+
 #include "path/Accumulate.hpp"
 #include "path/Path.hpp"
 
@@ -25,8 +27,8 @@ namespace Competition {
     inline constexpr auto COMMANDS = std::to_array<Command::Command>({
         // clang-format off
 
-        moveby(UP),
-        moveby(LEFT),
+        moveby(UP) & STOP,
+        moveby(LEFT) & STOP,
         moveby(DOWN),
         moveby(RIGHT)
 
@@ -34,4 +36,6 @@ namespace Competition {
     });
 
     inline constexpr auto PATH = Path::accumulate(COMMANDS);
+    inline constexpr auto COMPILED = Course::compile<PATH>();
+    inline constexpr auto ROUTES = COMPILED.routes;
 }
