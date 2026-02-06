@@ -1,185 +1,237 @@
 #include "managers/Straight.hpp"
-
 #include "Constants.hpp"
 
+#include "course/Course.hpp"
+
+#include "state/Radians.hpp"
 #include "state/Vector.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <optional>
+#include <utility>
 
-Straight::Straight(float dt) :
-    m_headingController{ { Manager::Straight::angularKp },
-                         { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
-    m_linearController{ { Manager::Straight::linearKp },
-                        { Manager::Straight::linearKd, Manager::Straight::FILTER_ALPHA, dt } },
-    m_angularSpeedFilter{ Manager::Straight::CENTRIPETAL_FILTER_CUTOFF, dt } {}
+Straight::Straight(float dt) : m_dt{ dt } {}
 
-static float getHeadingError(Radians targetAngle, Radians currentAngle, bool reverse) {
-    Radians headingError = currentAngle - targetAngle;
-    if (reverse) return headingError + Radians{ Constants::PI };
-    else return headingError;
+static float getLookaheadDistance(Vec2 const& currentVelocity, Radians currentAngle) {
+    using Manager::Straight::LOOK_AHEAD_KV;
+    using Manager::Straight::MAX_LOOK_AHEAD;
+    using Manager::Straight::MIN_LOOK_AHEAD;
+
+    float const angleDifference = Radians{ currentVelocity.angle() + Constants::PI / 2.0f } -
+                                  currentAngle;
+    float const currentLinearVelocity = std::copysignf(currentVelocity.length(), angleDifference);
+
+    return std::clamp(LOOK_AHEAD_KV * currentLinearVelocity, MIN_LOOK_AHEAD, MAX_LOOK_AHEAD);
 }
 
-static float getLinearError(Vec2 const& startPosition, Vec2 const& targetPosition,
-                            Vec2 const& currentPosition) {
-    Vec2 const pathVector = targetPosition - startPosition;
-    Vec2 const startToCurrentPosition = currentPosition - startPosition;
-    float const lateralError = Vec2::cross(pathVector, startToCurrentPosition) /
-                               pathVector.length();
-
-    return lateralError;
+static bool pointCircleIntersection(Vec2 const& point, Vec2 const& circleCenter,
+                                    float circleRadius) {
+    return (point - circleCenter).lengthSquared() <= circleRadius * circleRadius;
 }
 
-static float getLinearControl(float headingError, float turnAngle) {
-    using Manager::Straight::LINEAR_CONTROL_AUTHORITY;
+static std::optional<Vec2> lineCircleIntersectionProjections(Vec2 const& lineStart,
+                                                             Vec2 const& lineEnd,
+                                                             Vec2 const& circleCenter,
+                                                             float circleRadius) {
+    Vec2 const lineVector = lineEnd - lineStart;
+    Vec2 const circleToLineVector = lineStart - circleCenter;
 
-    float const angleBound = std::max(Constants::PI / 16.0f, std::fabsf(turnAngle / 2.0f));
-    if (headingError < -angleBound || headingError > angleBound) return 0.0f;
-    else return LINEAR_CONTROL_AUTHORITY;
-}
+    float const a = Vec2::dot(lineVector, lineVector);
+    float const b = 2.0f * Vec2::dot(circleToLineVector, lineVector);
+    float const c = Vec2::dot(circleToLineVector, circleToLineVector) - circleRadius * circleRadius;
 
-static float getAngularSpeed(float headingErrorSpeed, float linearErrorSpeed,
-                             float linearAuthority) {
-    float const headingErrorSpeedMagnitude = std::fabsf(headingErrorSpeed) + linearAuthority;
-    return std::clamp(linearErrorSpeed, -headingErrorSpeedMagnitude, headingErrorSpeedMagnitude) +
-           headingErrorSpeed;
-}
-
-static float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosition) {
-    return (targetPosition - currentPosition).length();
-}
-
-static float getSlowdownSpeed(std::optional<float> finalSpeed, float distanceLeft,
-                              float stoppingRadius) {
-    using Manager::Straight::MAX_LINEAR_SPEED;
-    using Manager::Straight::SLOWDOWN_ACCEL;
-
-    if (!finalSpeed) return MAX_LINEAR_SPEED;
-
-    float const slowdownSpeedSquared = *finalSpeed * *finalSpeed +
-                                       2.0f * SLOWDOWN_ACCEL * (distanceLeft - stoppingRadius);
-
-    if (slowdownSpeedSquared <= 0.0f) return *finalSpeed;
-    else return std::sqrtf(slowdownSpeedSquared);
-}
-
-static std::optional<float> getTargetSpeed(float targetTime, float currentTime, float distanceLeft,
-                                           std::optional<float> finalSpeed) {
-    using Manager::Straight::MAX_LINEAR_SPEED;
-    using Manager::Straight::SLOWDOWN_ACCEL;
-
-    if (!finalSpeed) return std::nullopt;
-
-    float const timeLeft = targetTime - currentTime;
-    if (timeLeft <= 0.0f) return std::nullopt;
-    if (distanceLeft / timeLeft <= *finalSpeed) return distanceLeft / timeLeft;
-
-    float const determinant = SLOWDOWN_ACCEL * SLOWDOWN_ACCEL * timeLeft * timeLeft +
-                              2.0f * SLOWDOWN_ACCEL * (*finalSpeed * timeLeft - distanceLeft);
-    if (determinant <= 0.0f) return std::nullopt;
-    else return *finalSpeed + SLOWDOWN_ACCEL * timeLeft - std::sqrtf(determinant);
-}
-
-float Straight::getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed,
-                               bool reverse) {
-    float linearSpeed;
-    if (!targetSpeed) linearSpeed = slowdownSpeed;
-    else linearSpeed = std::min(*targetSpeed, slowdownSpeed);
-
-    return (reverse ? -1.0f : 1.0f) * linearSpeed;
-}
-
-Vec2 Straight::limitSpeeds(float linearSpeed, float angularSpeed) {
-    using Chassis::MASS;
-    using Manager::Straight::MAX_CENTRIPETAL;
-    using Manager::Straight::MAX_LINEAR_SPEED;
-    using Manager::Straight::TURN_ANGULAR_SPEED;
-
-    angularSpeed = std::clamp(angularSpeed, -TURN_ANGULAR_SPEED, TURN_ANGULAR_SPEED);
-    float const filteredAngularSpeed = m_angularSpeedFilter.update(angularSpeed);
-
-    float const currentCentripetal = std::fabsf(MASS * linearSpeed * filteredAngularSpeed);
-    if (currentCentripetal > MAX_CENTRIPETAL) {
-        float const centripetalFactorRooted = std::sqrtf(MAX_CENTRIPETAL / currentCentripetal);
-        linearSpeed *= centripetalFactorRooted;
-        angularSpeed *= centripetalFactorRooted;
-    }
-
-    return { linearSpeed, angularSpeed };
-}
-
-static float getTurnAngle(Vec2 const& startPosition, Straight::Movement const& currentMovement,
-                          std::optional<Straight::Movement> const& nextMovement) {
-    if (!nextMovement) return 0.0f;
+    float const discriminant = b * b - 4.0f * a * c;
+    if (discriminant < 0.0f) return std::nullopt;
     else {
-        Vec2 const currentDirection = currentMovement.path.position - startPosition;
-        Vec2 const nextDirection = nextMovement->path.position - currentMovement.path.position;
+        float const sqrtDiscriminant = std::sqrtf(discriminant);
+        float const t1 = (-b - sqrtDiscriminant) / (2.0f * a);
+        float const t2 = (-b + sqrtDiscriminant) / (2.0f * a);
 
-        return std::acosf(Vec2::dot(currentDirection, nextDirection) /
-                          (currentDirection.length() * nextDirection.length()));
+        return Vec2{ t1, t2 };
     }
 }
 
-static std::optional<float> getFinalSpeed(std::optional<Straight::Movement> const& nextMovement,
-                                          Straight::Movement const& currentMovement,
-                                          float stoppingRadius, float turnAngle) {
-    using Chassis::MASS;
-    using Manager::Follower::DISTANCE_THRESHOLD_ACCURATE;
-    using Manager::Follower::TURNING_RADIUS;
-    using Manager::Straight::MAX_CENTRIPETAL;
-    using Manager::Straight::MAX_LINEAR_SPEED;
-    using Manager::Straight::SLOWDOWN_MIN_SPEED;
+static std::optional<Vec2> lineCircleIntersection(Vec2 const& lineStart, Vec2 const& lineEnd,
+                                                  Vec2 const& circleCenter, float circleRadius) {
+    auto const projections = lineCircleIntersectionProjections(lineStart, lineEnd, circleCenter,
+                                                               circleRadius);
+    if (!projections) return std::nullopt;
 
-    if (currentMovement.path.flags & Path::STOP || !nextMovement) return SLOWDOWN_MIN_SPEED;
-    else if (turnAngle == 0.0f) return MAX_LINEAR_SPEED;
+    Vec2 const lineVector = lineEnd - lineStart;
+
+    bool intersection1 = projections->x >= 0.0f && projections->x <= 1.0f;
+    bool intersection2 = projections->y >= 0.0f && projections->y <= 1.0f;
+
+    if (intersection1 && intersection2) {
+        if (projections->x >= projections->y) return lineStart + projections->x * lineVector;
+        else return lineStart + projections->y * lineVector;
+    }
+
+    if (intersection1) return lineStart + projections->x * lineVector;
+    if (intersection2) return lineStart + projections->y * lineVector;
+    return std::nullopt;
+}
+
+Vec2 Straight::getNextGoalPoint(Vec2 const& currentPosition, float lookAheadDistance) {
+    if (m_previousGoalPointIterator == std::end(m_route) - 1) {
+        Vec2 const& finalStartLine = (std::end(m_route) - 2)->position;
+        Vec2 const& finalEndLine = (std::end(m_route) - 1)->position;
+
+        auto const projections = lineCircleIntersectionProjections(
+            finalStartLine, finalEndLine, currentPosition, lookAheadDistance);
+
+        if (projections) {
+            Vec2 const& finalLineVector = finalEndLine - finalStartLine;
+            return finalStartLine + std::max(projections->x, projections->y) * finalLineVector;
+        } else return (std::end(m_route) - 1)->position;
+    }
+
+    for (auto routeIterator = m_previousGoalPointIterator; routeIterator != std::end(m_route);
+         ++routeIterator) {
+        Vec2 const& previousLinePosition = (routeIterator - 1)->position;
+        Vec2 const& currentLinePosition = routeIterator->position;
+
+        bool const canSeeEndPoint = pointCircleIntersection(currentLinePosition, currentPosition,
+                                                            lookAheadDistance);
+        if (canSeeEndPoint) {
+            m_previousGoalPointIterator++;
+            break;
+        }
+
+        std::optional<Vec2> const intersection = lineCircleIntersection(
+            previousLinePosition, currentLinePosition, currentPosition, lookAheadDistance);
+
+        if (intersection) {
+            m_previousGoalPoint = *intersection;
+            m_previousGoalPointIterator = routeIterator;
+
+            return *intersection;
+        }
+    }
+
+    return m_previousGoalPoint;
+}
+
+Straight::RouteIterator Straight::getNextUnpassedSegment(Vec2 const& currentPosition) {
+    for (auto routeIterator = m_previousPassedSegmentIterator; routeIterator != std::end(m_route);
+         ++routeIterator) {
+        Vec2 const& previousPathPosition = (routeIterator - 1)->position;
+        Vec2 const& currentPathPosition = routeIterator->position;
+
+        Vec2 const lineVector = currentPathPosition - previousPathPosition;
+        bool const isPassedSegment = Vec2::dot(currentPosition - previousPathPosition, lineVector) >
+                                     Vec2::dot(lineVector, lineVector);
+
+        if (!isPassedSegment) return m_previousPassedSegmentIterator = routeIterator;
+    }
+
+    return m_previousPassedSegmentIterator = std::end(m_route);
+}
+
+static float getDistanceAlongLine(Vec2 const& lineStart, Vec2 const& lineEnd, Vec2 const& point) {
+    Vec2 const lineVector = lineEnd - lineStart;
+    Vec2 const pointVector = point - lineStart;
+
+    float const t = Vec2::dot(pointVector, lineVector) / Vec2::dot(lineVector, lineVector);
+    return (t * lineVector).length();
+}
+
+static float getMaximumLinearVelocity(Course::Segment const& passedSegment,
+                                      Course::Segment const& unpassedSegment,
+                                      float distanceAlongCurrentSegment) {
+    using Track::MAX_ACCELERATION;
+
+    float const segmentLength = (unpassedSegment.position - passedSegment.position).length();
+    float const distanceToUnpassedSegment = segmentLength - distanceAlongCurrentSegment;
+
+    float const initialSpeed = passedSegment.velocityLimit;
+    float const finalSpeed = unpassedSegment.velocityLimit;
+
+    if (finalSpeed >= initialSpeed) return finalSpeed;
     else {
-        float const turnRadius = TURNING_RADIUS *
-                                 std::fabsf(std::tanf((Constants::PI - turnAngle) / 2.0f));
-        float const nextTravelLength =
-            (nextMovement->path.position - currentMovement.path.position).length();
-
-        float const maxTurnSpeed = std::sqrtf(MAX_CENTRIPETAL * turnRadius / MASS);
-        float const slowdownSpeed = nextMovement->path.flags & Path::STOP
-                                        ? getSlowdownSpeed(0.0f, nextTravelLength,
-                                                           DISTANCE_THRESHOLD_ACCURATE)
-                                        : MAX_LINEAR_SPEED;
-        float const nextTargetTime = nextMovement->targetTime - currentMovement.targetTime;
-        float const nextSpeed = nextTargetTime != 0.0f ? nextTravelLength / nextTargetTime
-                                                       : MAX_LINEAR_SPEED;
-
-        return std::min({ maxTurnSpeed, slowdownSpeed, nextSpeed, MAX_LINEAR_SPEED });
+        float const maxSpeedSquared = finalSpeed * finalSpeed +
+                                      2.0f * MAX_ACCELERATION * distanceToUnpassedSegment;
+        return std::sqrtf(maxSpeedSquared);
     }
 }
 
-void Straight::set(Vec2 const& startPosition, Movement const& currentMovement,
-                   std::optional<Movement> const& nextMovement, float stoppingRadius) {
-    m_startPosition = startPosition;
-    m_targetPosition = currentMovement.path.position;
-    m_stoppingRadius = stoppingRadius;
-
-    m_targetAngle = (m_targetPosition - m_startPosition).angle();
-    m_turnAngle = getTurnAngle(startPosition, currentMovement, nextMovement);
-    m_targetTime = currentMovement.targetTime;
-
-    m_finalSpeed = getFinalSpeed(nextMovement, currentMovement, m_stoppingRadius, m_turnAngle);
-
-    m_reverse = currentMovement.path.flags & Path::REVERSE;
+static float getDistanceLeft(Vec2 const& passedPosition, Course::Segment const& unpassedSegment,
+                             float distanceAlongCurrentSegment) {
+    float const distanceToEnd = unpassedSegment.distanceToEnd;
+    float const lengthOfCurrentSegment = (unpassedSegment.position - passedPosition).length();
+    return distanceToEnd + -distanceAlongCurrentSegment;
 }
 
-Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float currentTime) {
-    float const headingError = getHeadingError(m_targetAngle, currentAngle, m_reverse);
-    float const headingErrorSpeed = m_headingController.update(0.0f, headingError);
-    float const linearError = getLinearError(m_startPosition, m_targetPosition, currentPosition);
-    float const linearErrorSpeed = m_linearController.update(0.0f, linearError);
+static float getTargetLinearVelocity(float distanceLeft, float timeLeft) {
+    using Track::MAX_ACCELERATION;
+    using Track::MAX_VELOCITY;
+    using Track::MIN_VELOCITY;
 
-    float const linearControl = getLinearControl(headingError, m_turnAngle);
-    float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, linearControl);
+    if (timeLeft <= 0.0f) return MAX_VELOCITY;
+    if (distanceLeft / timeLeft <= MIN_VELOCITY) return distanceLeft / timeLeft;
 
-    float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
-    float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
-    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_finalSpeed);
-    float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
+    float const determinant = MAX_ACCELERATION * MAX_ACCELERATION * timeLeft * timeLeft +
+                              2.0f * MAX_ACCELERATION * (MIN_VELOCITY * timeLeft - distanceLeft);
+    if (determinant <= 0.0f) return MAX_VELOCITY;
+    else return MIN_VELOCITY + MAX_ACCELERATION * timeLeft - std::sqrtf(determinant);
+}
 
-    return limitSpeeds(linearSpeed, angularSpeed);
+float Straight::getLimitedLinearVelocity(Vec2 const& currentPosition,
+                                         RouteIterator unpassedSegmentIterator, float timeLeft) {
+    Course::Segment const& passedSegment = *(unpassedSegmentIterator - 1);
+    Course::Segment const& unpassedSegment = *(unpassedSegmentIterator);
+
+    float const distanceAlongCurrentSegment = getDistanceAlongLine(
+        passedSegment.position, unpassedSegment.position, currentPosition);
+    float const maximumLinearVelocity = getMaximumLinearVelocity(passedSegment, unpassedSegment,
+                                                                 distanceAlongCurrentSegment);
+    float const distanceLeftAlongSegment = getDistanceLeft(passedSegment.position, unpassedSegment,
+                                                           distanceAlongCurrentSegment);
+    float const targetLinearVelocity = getTargetLinearVelocity(distanceLeftAlongSegment, timeLeft);
+    float limitedLinearVelocity = std::min(targetLinearVelocity, maximumLinearVelocity);
+
+    float const maxVelocityChange = std::fabsf(limitedLinearVelocity - m_previousVelocity);
+    return m_previousVelocity += std::clamp(limitedLinearVelocity - m_previousVelocity,
+                                            -maxVelocityChange, maxVelocityChange);
+}
+
+static float getTargetAngularVelocity(Vec2 const& currentPosition, Vec2 const& goalPoint,
+                                      Radians currentAngle, float targetLinearVelocity,
+                                      float lookaheadDistance) {
+    using Chassis::AXLE_LENGTH;
+
+    Radians const angleToGoal = (goalPoint - currentPosition).angle();
+    Radians const angularError = angleToGoal - currentAngle;
+
+    return AXLE_LENGTH * std::sinf(angularError) * targetLinearVelocity / lookaheadDistance;
+}
+
+void Straight::setup(Route route, float targetTime) {
+    m_route = route;
+    m_previousGoalPointIterator = std::begin(route) + 1;
+    m_previousPassedSegmentIterator = std::begin(route) + 1;
+
+    m_previousVelocity = 0.0f;
+    m_targetTime = targetTime;
+}
+
+std::optional<Vec2> Straight::update(Vec2 const& currentPosition, Vec2 const& currentVelocity,
+                                     Radians currentAngle, float currentTime) {
+    RouteIterator const unpassedSegmentIterator = getNextUnpassedSegment(currentPosition);
+    if (unpassedSegmentIterator == std::end(m_route)) return std::nullopt;
+
+    float const timeLeft = m_targetTime - currentTime;
+    float const targetLinearVelocity = getLimitedLinearVelocity(currentPosition,
+                                                                unpassedSegmentIterator, timeLeft);
+
+    float const lookaheadDistance = getLookaheadDistance(currentVelocity, currentAngle);
+    std::printf(">lookahead:%.5f\n", lookaheadDistance);
+    Vec2 const goalPoint = getNextGoalPoint(currentPosition, lookaheadDistance);
+
+    float const targetAngularVelocity = getTargetAngularVelocity(
+        currentPosition, goalPoint, currentAngle, targetLinearVelocity, lookaheadDistance);
+
+    return Vec2{ targetLinearVelocity, targetAngularVelocity };
 }

@@ -56,12 +56,12 @@ namespace Course::Assigner {
             for (size_t i = 0; i < newCourse.segments.size(); ++i) {
                 Segment& segment = newCourse.segments[i];
                 float const curvature = curvatures[i];
+                float const sqrtCurvature = constexprSqrt(curvature);
 
                 if (curvature == 0.0f) segment.velocityLimit = MAX_VELOCITY;
-                else {
-                    float const sqrtCurvature = constexprSqrt(curvature);
-                    segment.velocityLimit = CURVATURE_SLOWDOWN / sqrtCurvature;
-                }
+                else
+                    segment.velocityLimit = std::min(CURVATURE_SLOWDOWN / sqrtCurvature,
+                                                     MAX_VELOCITY);
             }
 
             return newCourse;
@@ -70,6 +70,7 @@ namespace Course::Assigner {
         template <Course course>
         constexpr auto limitAcceleration() {
             using Track::MAX_ACCELERATION;
+            using Track::MIN_VELOCITY;
 
             Course newCourse = course;
 
@@ -77,7 +78,7 @@ namespace Course::Assigner {
                 ptrdiff_t beginIndex = static_cast<ptrdiff_t>(route.beginIndex);
                 ptrdiff_t endIndex = static_cast<ptrdiff_t>(route.endIndex);
 
-                newCourse.segments[static_cast<size_t>(endIndex - 1)].velocityLimit = 0.0f;
+                newCourse.segments[static_cast<size_t>(endIndex - 1)].velocityLimit = MIN_VELOCITY;
 
                 for (ptrdiff_t i = endIndex - 2; i >= beginIndex; --i) {
                     Segment& currentSegment = newCourse.segments[static_cast<size_t>(i)];
@@ -116,6 +117,23 @@ namespace Course::Assigner {
 
                 currentSegment.distanceToEnd = distance + nextSegment.distanceToEnd;
             }
+        }
+
+        return course;
+    }
+
+    template <size_t segmentCount, size_t routeCount>
+    constexpr auto assignTargetTimes(Course<segmentCount, routeCount> course, float targetTime) {
+        using Track::STOP_TIME;
+
+        float totalLength = 0;
+        for (Route const& route : course.routes)
+            totalLength += course.segments[route.beginIndex].distanceToEnd;
+
+        float const assignableTargetTime = std::max(0.0f, targetTime - routeCount * STOP_TIME);
+        for (Route& route : course.routes) {
+            float const routeLength = course.segments[route.beginIndex].distanceToEnd;
+            route.targetTime = assignableTargetTime * routeLength / totalLength + STOP_TIME;
         }
 
         return course;

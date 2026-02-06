@@ -32,25 +32,3 @@ namespace Course {
         std::array<Route, RouteCount> routes{};
     };
 }
-
-#include <format>
-#include <iostream>
-
-std::ostream& operator<<(std::ostream& out, Course::Segment const& segment) {
-    return out << std::format("{},{}", segment.position.x, segment.position.y);
-}
-
-template <size_t SegmentCount, size_t RouteCount>
-std::ostream& operator<<(std::ostream& out,
-                         Course::Course<SegmentCount, RouteCount> const& course) {
-    for (size_t i = 0; i < course.routes.size(); ++i) {
-        auto const& route = course.routes[i];
-
-        for (size_t j = route.beginIndex; j < route.endIndex; ++j)
-            out << course.segments[j] << '\n';
-
-        out << '\n';
-    }
-
-    return out;
-}

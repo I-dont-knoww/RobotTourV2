@@ -9,7 +9,7 @@
 using uint = unsigned int;
 
 namespace Chassis {
-    inline constexpr float AXLE_LENGTH = 13.35f;
+    inline constexpr float AXLE_LENGTH = 3.0f;
     inline constexpr float WHEEL_RADIUS = 3.63f * 1.02357198538f;
 
     inline constexpr float DOWEL_DISTANCE = 2.314066f;
@@ -65,8 +65,8 @@ namespace Drivers {
 
 namespace Integration {
     inline constexpr float TARGET_FAST_LOOP_HZ = 32.0e3f;
-    inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
-    // inline constexpr float TARGET_SLOW_LOOP_HZ = 2.0e3f;
+    // inline constexpr float TARGET_SLOW_LOOP_HZ = 10.0e3f;
+    inline constexpr float TARGET_SLOW_LOOP_HZ = 2.0e3f;
 
     inline constexpr float CALIBRATION_DELAY = 1.0f;
     inline constexpr float FINAL_STATE_MEASUREMENT_DELAY = 1.0f;
@@ -96,30 +96,13 @@ namespace Kinematics {
 
 namespace Manager {
     namespace Follower {
-        inline constexpr float DISTANCE_THRESHOLD_ACCURATE = 0.0f;
-        inline constexpr float DISTANCE_THRESHOLD_FAST = 0.0f;
-        inline constexpr float TURNING_RADIUS = 20.0f;
-
         inline constexpr float ANGLE_THRESHOLD = 0.01f;
     }
 
     namespace Straight {
-        inline constexpr float SLOWDOWN_ACCEL = 40.0f;
-        inline constexpr float SLOWDOWN_MIN_SPEED = 4.0f;
-
-        inline constexpr float angularKp = 20.0f;
-        inline constexpr float angularKd = 0.2f;
-
-        inline constexpr float linearKp = 2.0f;
-        inline constexpr float linearKd = 0.1f;
-        inline constexpr float LINEAR_CONTROL_AUTHORITY = 0.3f;
-
-        inline constexpr float FILTER_ALPHA = 1.0f;
-        inline constexpr float CENTRIPETAL_FILTER_CUTOFF = 25.0f;
-
-        inline constexpr float MAX_CENTRIPETAL = 60.0f;
-        inline constexpr float TURN_ANGULAR_SPEED = 3.5f;
-        inline constexpr float MAX_LINEAR_SPEED = 500.0f;
+        inline constexpr float LOOK_AHEAD_KV = 0.3f;
+        inline constexpr float MIN_LOOK_AHEAD = 20.0f;
+        inline constexpr float MAX_LOOK_AHEAD = 20.0f;
     }
 
     namespace Rotation {
@@ -246,9 +229,12 @@ namespace Track {
     inline constexpr float FAILED_RUN_MOTOR_SPEED = 0.1f;
 
     inline constexpr float PATH_SPACING = 2.0f;
-    inline constexpr ptrdiff_t MOVING_AVERAGE_WIDTH = 20;
+    inline constexpr ptrdiff_t MOVING_AVERAGE_WIDTH = 25;
 
-    inline constexpr float CURVATURE_SLOWDOWN = 2.0f;
+    inline constexpr float CURVATURE_SLOWDOWN = 10.0f;
+    inline constexpr float MIN_VELOCITY = 10.0f;
     inline constexpr float MAX_VELOCITY = 500.0f;
-    inline constexpr float MAX_ACCELERATION = 20.0f;
+    inline constexpr float MAX_ACCELERATION = 40.0f;
+
+    inline constexpr float STOP_TIME = 1.0f;
 }

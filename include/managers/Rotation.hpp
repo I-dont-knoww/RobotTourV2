@@ -9,6 +9,8 @@
 #include "state/Radians.hpp"
 #include "state/Vector.hpp"
 
+#include <optional>
+
 class Rotation {
 public:
     Rotation() = default;
@@ -17,7 +19,7 @@ public:
 
     void set(Radians targetAngle) { m_targetAngle = targetAngle; }
 
-    Vec2 update(Radians currentAngle);
+    std::optional<Vec2> update(Radians currentAngle);
 
 private:
     Controller<SController, PController> m_rotationController{ { Manager::Rotation::kS },

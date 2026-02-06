@@ -9,14 +9,15 @@
 #include <array>
 
 namespace Course {
-    template <std::array path>
+    template <std::array path, float targetTime>
     constexpr auto compile() {
         static constexpr auto converted = Converter::convert<path>();
         static constexpr auto extended = Extender::extend<converted>();
         static constexpr auto smoothened = Smoothener::smoothen<extended>();
         static constexpr auto velocityLimited = Assigner::assignVelocityLimits<smoothened>();
-        static constexpr auto distanceLeftAssigned = Assigner::assignDistanceLeft(velocityLimited);
+        static constexpr auto distanceLeft = Assigner::assignDistanceLeft(velocityLimited);
+        static constexpr auto targetTimes = Assigner::assignTargetTimes(distanceLeft, targetTime);
 
-        return distanceLeftAssigned;
+        return targetTimes;
     }
 }

@@ -22,20 +22,25 @@ namespace Competition {
     using namespace Command::Tokens;
 
     inline constexpr bool FAIL_RUN = false;
-    inline constexpr float TARGET_TIME = 5.0f;
+    inline constexpr float TARGET_TIME = 0.0f;
 
     inline constexpr auto COMMANDS = std::to_array<Command::Command>({
         // clang-format off
 
-        moveby(UP) & STOP,
-        moveby(LEFT) & STOP,
-        moveby(DOWN),
-        moveby(RIGHT)
+        // moveby(UP),
+        // moveby(0.6f * LEFT)
+        
+        moveby(1.2f * UP),
+        moveby(1.2f * UP + 1.0f * LEFT),
+        moveby(1.2f * UP),
+        moveby(1.2f * UP + 1.0f * RIGHT),
+        moveby(1.2f * UP),
 
         // clang-format on
     });
 
     inline constexpr auto PATH = Path::accumulate(COMMANDS);
-    inline constexpr auto COMPILED = Course::compile<PATH>();
+    inline constexpr auto COMPILED = Course::compile<PATH, TARGET_TIME>();
+    inline constexpr auto SEGMENTS = COMPILED.segments;
     inline constexpr auto ROUTES = COMPILED.routes;
 }
