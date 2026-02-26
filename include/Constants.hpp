@@ -10,7 +10,7 @@ using uint = unsigned int;
 
 namespace Chassis {
     inline constexpr float AXLE_LENGTH = 13.35f;
-    inline constexpr float WHEEL_RADIUS = 3.63f * 1.02357198538f;
+    inline constexpr float WHEEL_RADIUS = 3.7155663069294f;
 
     inline constexpr float DOWEL_DISTANCE = 2.314066f;
 
