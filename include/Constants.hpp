@@ -107,6 +107,8 @@ namespace Manager {
         inline constexpr float SLOWDOWN_ACCEL = 40.0f;
         inline constexpr float SLOWDOWN_MIN_SPEED = 4.0f;
 
+        inline constexpr float SPEEDUP_ACCEL = 40.0f;
+        
         inline constexpr float angularKp = 20.0f;
         inline constexpr float angularKd = 0.2f;
 

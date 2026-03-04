@@ -50,42 +50,49 @@ static float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosi
     return (targetPosition - currentPosition).length();
 }
 
-static float getSlowdownSpeed(std::optional<float> finalSpeed, float distanceLeft,
-                              float stoppingRadius) {
+static float getSpeedupSpeed(float startTime, float currentTime) {
+    using Manager::Straight::MAX_LINEAR_SPEED;
+    using Manager::Straight::SPEEDUP_ACCEL;
+
+    return SPEEDUP_ACCEL * (currentTime - startTime);
+}
+
+static float getSlowdownSpeed(float finalSpeed, float distanceLeft, float stoppingRadius) {
     using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::SLOWDOWN_ACCEL;
 
     if (!finalSpeed) return MAX_LINEAR_SPEED;
 
-    float const slowdownSpeedSquared = *finalSpeed * *finalSpeed +
+    float const slowdownSpeedSquared = finalSpeed * finalSpeed +
                                        2.0f * SLOWDOWN_ACCEL * (distanceLeft - stoppingRadius);
 
-    if (slowdownSpeedSquared <= 0.0f) return *finalSpeed;
+    if (slowdownSpeedSquared <= 0.0f) return finalSpeed;
     else return std::sqrtf(slowdownSpeedSquared);
 }
 
 static std::optional<float> getTargetSpeed(float targetTime, float currentTime, float distanceLeft,
-                                           std::optional<float> finalSpeed) {
+                                           float startSpeed, float finalSpeed) {
     using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::SLOWDOWN_ACCEL;
-
-    if (!finalSpeed) return std::nullopt;
+    using Manager::Straight::SPEEDUP_ACCEL;
 
     float const timeLeft = targetTime - currentTime;
     if (timeLeft <= 0.0f) return std::nullopt;
-    if (distanceLeft / timeLeft <= *finalSpeed) return distanceLeft / timeLeft;
+    if (distanceLeft / timeLeft <= finalSpeed) return distanceLeft / timeLeft;
 
     float const determinant = SLOWDOWN_ACCEL * SLOWDOWN_ACCEL * timeLeft * timeLeft +
-                              2.0f * SLOWDOWN_ACCEL * (*finalSpeed * timeLeft - distanceLeft);
+                              2.0f * SLOWDOWN_ACCEL * (finalSpeed * timeLeft - distanceLeft);
     if (determinant <= 0.0f) return std::nullopt;
-    else return *finalSpeed + SLOWDOWN_ACCEL * timeLeft - std::sqrtf(determinant);
+    else return finalSpeed + SLOWDOWN_ACCEL * timeLeft - std::sqrtf(determinant);
 }
 
-float Straight::getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed,
-                               bool reverse) {
+float Straight::getLinearSpeed(std::optional<float> targetSpeed, float speedupSpeed,
+                               float slowdownSpeed, bool reverse) {
+    float const minSpeed = std::min(speedupSpeed, slowdownSpeed);
+
     float linearSpeed;
-    if (!targetSpeed) linearSpeed = slowdownSpeed;
-    else linearSpeed = std::min(*targetSpeed, slowdownSpeed);
+    if (!targetSpeed) linearSpeed = minSpeed;
+    else linearSpeed = std::min(*targetSpeed, minSpeed);
 
     return (reverse ? -1.0f : 1.0f) * linearSpeed;
 }
@@ -119,9 +126,9 @@ static float getTurnAngle(Vec2 const& startPosition, Straight::Movement const& c
     }
 }
 
-static std::optional<float> getFinalSpeed(std::optional<Straight::Movement> const& nextMovement,
-                                          Straight::Movement const& currentMovement,
-                                          float stoppingRadius, float turnAngle) {
+static float getFinalSpeed(std::optional<Straight::Movement> const& nextMovement,
+                           Straight::Movement const& currentMovement, float stoppingRadius,
+                           float turnAngle) {
     using Chassis::MASS;
     using Manager::Follower::DISTANCE_THRESHOLD_ACCURATE;
     using Manager::Follower::TURNING_RADIUS;
@@ -151,7 +158,8 @@ static std::optional<float> getFinalSpeed(std::optional<Straight::Movement> cons
 }
 
 void Straight::set(Vec2 const& startPosition, Movement const& currentMovement,
-                   std::optional<Movement> const& nextMovement, float stoppingRadius) {
+                   std::optional<Movement> const& nextMovement, float stoppingRadius,
+                   float startTime) {
     m_startPosition = startPosition;
     m_targetPosition = currentMovement.path.position;
     m_stoppingRadius = stoppingRadius;
@@ -159,6 +167,9 @@ void Straight::set(Vec2 const& startPosition, Movement const& currentMovement,
     m_targetAngle = (m_targetPosition - m_startPosition).angle();
     m_turnAngle = getTurnAngle(startPosition, currentMovement, nextMovement);
     m_targetTime = currentMovement.targetTime;
+
+    m_startTime = startTime;
+    m_startSpeed = m_finalSpeed;
 
     m_finalSpeed = getFinalSpeed(nextMovement, currentMovement, m_stoppingRadius, m_turnAngle);
 
@@ -175,9 +186,11 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float c
     float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, linearControl);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
+    float const speedupSpeed = getSpeedupSpeed(m_startTime, currentTime);
     float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
-    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_finalSpeed);
-    float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
+    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_startSpeed,
+                                            m_finalSpeed);
+    float const linearSpeed = getLinearSpeed(targetSpeed, speedupSpeed, slowdownSpeed, m_reverse);
 
     return limitSpeeds(linearSpeed, angularSpeed);
 }

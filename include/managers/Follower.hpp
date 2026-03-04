@@ -24,11 +24,8 @@ using uint = unsigned int;
 template <size_t N>
 class Follower {
 public:
-    Follower(std::array<Path, N> const& path, std::array<float, N> const& targetTimes, float dt)
-        : m_path{ path },
-          m_targetTimes{ targetTimes },
-          m_straightManager{ dt },
-          m_rotationManager{} {
+    Follower(std::array<Path, N> const& path, std::array<float, N> const& targetTimes, float dt) :
+        m_path{ path }, m_targetTimes{ targetTimes }, m_straightManager{ dt }, m_rotationManager{} {
         setupNextMode({ 0.0f, 0.0f });
     }
 
@@ -36,7 +33,7 @@ public:
 
     Vec2 update(ForwardKinematics::State const& state, float currentTime) {
         if (m_exitCondition.check(state.position, state.angle))
-            m_finished = setupNextMode(state.position);
+            m_finished = setupNextMode(state.position, currentTime);
         if (m_finished) return { 0.0f, 0.0f };
 
         if (m_mode == movement)
@@ -46,7 +43,7 @@ public:
     }
 
 private:
-    void setupMovement(Vec2 const& currentPosition) {
+    void setupMovement(Vec2 const& currentPosition, float currentTime) {
         Vec2 const& startPosition = m_index == 0u ? Vec2{ 0.0f, 0.0f }
                                                   : m_path[m_index - 1].position;
 
@@ -62,7 +59,8 @@ private:
         else if (currentMovement.path.flags & Path::STOP)
             distanceThreshold = Manager::Follower::DISTANCE_THRESHOLD_FAST;
 
-        m_straightManager.set(startPosition, currentMovement, nextMovement, distanceThreshold);
+        m_straightManager.set(startPosition, currentMovement, nextMovement, distanceThreshold,
+                              currentTime);
         m_exitCondition.set(
             { { currentPosition, currentMovement.path.position, distanceThreshold } },
             std::nullopt);
@@ -70,7 +68,7 @@ private:
         m_mode = movement;
     }
 
-    void setupRotation() {
+    void setupRotation(float currentTime) {
         Path const& previousPath = m_path[m_index - 1];
         Path const& path = m_path[m_index];
 
@@ -83,16 +81,16 @@ private:
         m_mode = rotation;
     }
 
-    bool setupNextMode(Vec2 const& currentPosition) {
+    bool setupNextMode(Vec2 const& currentPosition, float currentTime) {
         if (m_index == N) return true;
 
-        if (m_mode == none || m_mode == rotation) setupMovement(currentPosition);
+        if (m_mode == none || m_mode == rotation) setupMovement(currentPosition, currentTime);
         else if (m_mode == movement) {
             ++m_index;
             if (m_index == N) return true;
 
-            if (m_path[m_index - 1].flags & Path::STOP) setupRotation();
-            else setupMovement(currentPosition);
+            if (m_path[m_index - 1].flags & Path::STOP) setupRotation(currentTime);
+            else setupMovement(currentPosition, currentTime);
         }
 
         return false;
