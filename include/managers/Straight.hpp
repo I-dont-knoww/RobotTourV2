@@ -26,12 +26,13 @@ public:
     Straight(float dt);
 
     void set(Vec2 const& startPosition, Movement const& currentMovement,
-             std::optional<Movement> const& nextMovement, float stoppingRadius);
+             std::optional<Movement> const& nextMovement, float stoppingRadius, float startTime);
 
     Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float currentTime);
 
 private:
-    float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool reverse);
+    float getLinearSpeed(std::optional<float> targetSpeed, float speedupSpeed, float slowdownSpeed,
+                         bool reverse);
 
     Vec2 limitSpeeds(float linearSpeed, float angularSpeed);
 
@@ -43,10 +44,13 @@ private:
     Vec2 m_startPosition{};
     Vec2 m_targetPosition{};
 
-    std::optional<float> m_finalSpeed{};
+    float m_finalSpeed = 0.0f;
 
     Radians m_targetAngle{};
     float m_targetTime{};
+
+    float m_startTime{};
+    float m_startSpeed{};
 
     float m_turnAngle{};
     float m_stoppingRadius{};
