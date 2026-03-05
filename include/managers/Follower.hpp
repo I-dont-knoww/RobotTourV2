@@ -38,7 +38,7 @@ public:
 
         if (m_mode == movement)
             return m_straightManager.update(state.position, state.angle, currentTime);
-        else if (m_mode == rotation) return m_rotationManager.update(state.angle);
+        else if (m_mode == rotation) return m_rotationManager.update(state.angle, currentTime);
         else return { 0.0f, 0.0f };
     }
 
@@ -75,7 +75,7 @@ private:
         Radians targetAngle{ (path.position - previousPath.position).angle() };
         if (path.flags & Path::REVERSE) targetAngle += Radians{ Constants::PI };
 
-        m_rotationManager.set(targetAngle);
+        m_rotationManager.set(targetAngle, currentTime);
         m_exitCondition.set(std::nullopt, { { targetAngle, Manager::Follower::ANGLE_THRESHOLD } });
 
         m_mode = rotation;
