@@ -25,8 +25,8 @@ template <size_t N>
 class Follower {
 public:
     Follower(std::array<Path, N> const& path, std::array<float, N> const& targetTimes, float dt) :
-        m_path{ path }, m_targetTimes{ targetTimes }, m_straightManager{ dt }, m_rotationManager{} {
-        setupNextMode({ 0.0f, 0.0f });
+        m_path{ path }, m_targetTimes{ targetTimes }, m_straightManager{ dt }, m_rotationManager{ dt } {
+        setupNextMode({ 0.0f, 0.0f }, 0.0f);
     }
 
     bool finished() { return m_finished; }
