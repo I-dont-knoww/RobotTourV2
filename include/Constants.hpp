@@ -127,12 +127,12 @@ namespace Manager {
     }
 
     namespace Rotation {
-        inline constexpr float kS = 1.0f;
-        inline constexpr float kP = 3.0f;
+        inline constexpr float SLOWDOWN_ACCEL = 3.0f;
+
+        inline constexpr float MIN_SPEED = 1.0f;
+        inline constexpr float MAX_SPEED = 2.0f;
 
         inline constexpr float GRABBING_SPEED = 2.0f;
-
-        inline constexpr float MAX_SPEED = 2.0f;
         inline constexpr float TURN_TIME_OFFSET = 1.0f;
     }
 }

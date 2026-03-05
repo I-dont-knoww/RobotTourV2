@@ -2,16 +2,12 @@
 
 #include "Constants.hpp"
 
-#include "control/Controller.hpp"
-#include "control/feedforward/SController.hpp"
-#include "control/pid/PController.hpp"
-
 #include "state/Radians.hpp"
 #include "state/Vector.hpp"
 
 class Rotation {
 public:
-    Rotation() = default;
+    Rotation(float dt);
 
     Radians targetAngle() const { return m_targetAngle; }
 
@@ -20,8 +16,6 @@ public:
     Vec2 update(Radians currentAngle);
 
 private:
-    Controller<SController, PController> m_rotationController{ { Manager::Rotation::kS },
-                                                               { Manager::Rotation::kP } };
-
     Radians m_targetAngle{};
+    float m_dt{};
 };
