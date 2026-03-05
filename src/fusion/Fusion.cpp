@@ -1,8 +1,13 @@
 #include "fusion/Fusion.hpp"
 
-Fusion::Fusion(float dt) : m_dt{ dt } {}
+#include "Constants.hpp"
+
+Fusion::Fusion(float dt) :
+    m_gyroscopeFilter{ Kinematics::Forward::GYROSCOPE_CUTOFF_FREQ, dt }, m_dt{ dt } {}
 
 float Fusion::update(float angularVelocity) {
-    m_heading += angularVelocity * m_dt;
+    float const filteredAngularVelocity = m_gyroscopeFilter.update(angularVelocity);
+    
+    m_heading += filteredAngularVelocity * m_dt;
     return m_heading;
 }

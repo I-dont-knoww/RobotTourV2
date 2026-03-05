@@ -87,6 +87,8 @@ namespace Kinematics {
 
         inline constexpr float VELOCITY_CUTOFF_FREQUENCY = 50.0f;
         inline constexpr float WHEEL_SPEED_CUTOFF_FREQUENCY = 100.0f;
+
+        inline constexpr float GYROSCOPE_CUTOFF_FREQ = 500.0f;
     }
 
     namespace Inverse {
