@@ -31,8 +31,7 @@ public:
     Vec2 update(Vec2 const& currentPosition, Radians currentAngle, float currentTime);
 
 private:
-    float getLinearSpeed(std::optional<float> targetSpeed, float speedupSpeed, float slowdownSpeed,
-                         bool reverse);
+    float getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed, bool reverse);
 
     Vec2 limitSpeeds(float linearSpeed, float angularSpeed);
 
@@ -50,10 +49,12 @@ private:
     float m_targetTime{};
 
     float m_startTime{};
-    float m_startSpeed{};
+    float m_previousLinearSpeed{};
 
     float m_turnAngle{};
     float m_stoppingRadius{};
+
+    float m_dt{};
 
     bool m_reverse{};
 };
