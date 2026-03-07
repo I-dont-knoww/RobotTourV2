@@ -13,7 +13,8 @@ Straight::Straight(float dt) :
                          { Manager::Straight::angularKd, Manager::Straight::FILTER_ALPHA, dt } },
     m_linearController{ { Manager::Straight::linearKp },
                         { Manager::Straight::linearKd, Manager::Straight::FILTER_ALPHA, dt } },
-    m_angularSpeedFilter{ Manager::Straight::CENTRIPETAL_FILTER_CUTOFF, dt } {}
+    m_angularSpeedFilter{ Manager::Straight::CENTRIPETAL_FILTER_CUTOFF, dt },
+    m_dt{ dt } {}
 
 static float getHeadingError(Radians targetAngle, Radians currentAngle, bool reverse) {
     Radians headingError = currentAngle - targetAngle;
@@ -50,13 +51,6 @@ static float getDistanceLeft(Vec2 const& targetPosition, Vec2 const& currentPosi
     return (targetPosition - currentPosition).length();
 }
 
-static float getSpeedupSpeed(float startTime, float currentTime) {
-    using Manager::Straight::MAX_LINEAR_SPEED;
-    using Manager::Straight::SPEEDUP_ACCEL;
-
-    return SPEEDUP_ACCEL * (currentTime - startTime);
-}
-
 static float getSlowdownSpeed(float finalSpeed, float distanceLeft, float stoppingRadius) {
     using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::SLOWDOWN_ACCEL;
@@ -71,7 +65,7 @@ static float getSlowdownSpeed(float finalSpeed, float distanceLeft, float stoppi
 }
 
 static std::optional<float> getTargetSpeed(float targetTime, float currentTime, float distanceLeft,
-                                           float startSpeed, float finalSpeed) {
+                                           float finalSpeed) {
     using Manager::Straight::MAX_LINEAR_SPEED;
     using Manager::Straight::SLOWDOWN_ACCEL;
     using Manager::Straight::SPEEDUP_ACCEL;
@@ -86,13 +80,19 @@ static std::optional<float> getTargetSpeed(float targetTime, float currentTime, 
     else return finalSpeed + SLOWDOWN_ACCEL * timeLeft - std::sqrtf(determinant);
 }
 
-float Straight::getLinearSpeed(std::optional<float> targetSpeed, float speedupSpeed,
-                               float slowdownSpeed, bool reverse) {
-    float const minSpeed = std::min(speedupSpeed, slowdownSpeed);
+float Straight::getLinearSpeed(std::optional<float> targetSpeed, float slowdownSpeed,
+                               bool reverse) {
+    using Manager::Straight::SPEEDUP_ACCEL;
+    using Manager::Straight::SLOWDOWN_MIN_SPEED;
 
     float linearSpeed;
-    if (!targetSpeed) linearSpeed = minSpeed;
-    else linearSpeed = std::min(*targetSpeed, minSpeed);
+    if (!targetSpeed) linearSpeed = slowdownSpeed;
+    else linearSpeed = std::min(*targetSpeed, slowdownSpeed);
+
+    float const maxLinearSpeedChange = SPEEDUP_ACCEL * m_dt;
+    m_previousLinearSpeed += std::min(linearSpeed - m_previousLinearSpeed, maxLinearSpeedChange);
+    m_previousLinearSpeed = std::max(m_previousLinearSpeed, SLOWDOWN_MIN_SPEED);
+    linearSpeed = m_previousLinearSpeed;
 
     return (reverse ? -1.0f : 1.0f) * linearSpeed;
 }
@@ -169,7 +169,6 @@ void Straight::set(Vec2 const& startPosition, Movement const& currentMovement,
     m_targetTime = currentMovement.targetTime;
 
     m_startTime = startTime;
-    m_startSpeed = m_finalSpeed;
 
     m_finalSpeed = getFinalSpeed(nextMovement, currentMovement, m_stoppingRadius, m_turnAngle);
 
@@ -186,11 +185,9 @@ Vec2 Straight::update(Vec2 const& currentPosition, Radians currentAngle, float c
     float const angularSpeed = getAngularSpeed(headingErrorSpeed, linearErrorSpeed, linearControl);
 
     float const distanceLeft = getDistanceLeft(m_targetPosition, currentPosition);
-    float const speedupSpeed = getSpeedupSpeed(m_startTime, currentTime);
     float const slowdownSpeed = getSlowdownSpeed(m_finalSpeed, distanceLeft, m_stoppingRadius);
-    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_startSpeed,
-                                            m_finalSpeed);
-    float const linearSpeed = getLinearSpeed(targetSpeed, speedupSpeed, slowdownSpeed, m_reverse);
+    auto const targetSpeed = getTargetSpeed(m_targetTime, currentTime, distanceLeft, m_finalSpeed);
+    float const linearSpeed = getLinearSpeed(targetSpeed, slowdownSpeed, m_reverse);
 
     return limitSpeeds(linearSpeed, angularSpeed);
 }

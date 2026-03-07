@@ -22,9 +22,10 @@ static float getTargetSpeed(float angularError) {
 
 static float getMaxSpeed(float currentTime, float startTime) {
     using Manager::Rotation::MAX_SPEED;
+    using Manager::Rotation::MIN_SPEED;
     using Manager::Rotation::SPEEDUP_ACCEL;
 
-    float const maxAccelerationSpeed = SPEEDUP_ACCEL * (currentTime - startTime);
+    float const maxAccelerationSpeed = SPEEDUP_ACCEL * (currentTime - startTime) + MIN_SPEED;
     return std::min(maxAccelerationSpeed, MAX_SPEED);
 }
 
