@@ -12,7 +12,7 @@ namespace Chassis {
     inline constexpr float AXLE_LENGTH = 13.35f;
     inline constexpr float WHEEL_RADIUS = 3.7155663069294f;
 
-    inline constexpr float DOWEL_DISTANCE = 2.314066f;
+    inline constexpr float DOWEL_DISTANCE = 2.014066f;
 
     inline constexpr float MASS = 0.786f;
 }
