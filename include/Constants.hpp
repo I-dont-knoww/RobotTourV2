@@ -247,6 +247,6 @@ namespace Status {
 namespace Track {
     inline constexpr float SQUARE_SIZE = 50.0f;
 
-    inline constexpr float FAILED_RUN_DELAY = 2.5f;
+    inline constexpr float FAILED_RUN_DELAY = 2.0f;
     inline constexpr float FAILED_RUN_MOTOR_SPEED = 0.1f;
 }
